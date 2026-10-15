@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="מדריך לימודי בעברית לתכנית הפריסה העצמאית של geometrydash-ui ב-GCP: סביבות, Terraform, קונטיינרים, CI/CD, ניטור, עלויות ושחזור.">
+  <title>מהקוד אל הענן · מדריך הפריסה של geometrydash-ui</title>
+  <style>
+    :root{--bg:#f6f5f0;--paper:#fffefa;--ink:#203638;--muted:#5c6f70;--line:#dce3de;--accent:#087b6c;--soft:#eaf5ee;--navy:#193b42;--amber:#88551c;--amber-bg:#fff3df;--blue:#356eaa;--blue-bg:#eaf1fa;--danger:#a13f3f;--red-bg:#fceeee;--radius:18px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:92px}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,"Noto Sans Hebrew",Tahoma,sans-serif;font-size:16px;line-height:1.85}a{color:var(--accent);text-underline-offset:4px}button,input{font:inherit}button,a,input,summary{ -webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #d5a645;outline-offset:4px}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}h1,h2,h3,h4,p{margin-top:0}h1,h2,h3,h4{line-height:1.35;letter-spacing:-.035em}h1{font-size:clamp(2.6rem,5.1vw,4.7rem);font-weight:800;margin-bottom:20px}h2{font-size:clamp(1.8rem,3vw,2.5rem);margin-bottom:16px}h3{font-size:1.2rem;margin-bottom:10px}h4{font-size:1.05rem;margin-bottom:8px}p{margin-bottom:17px}bdi,code,.ltr{direction:ltr;unicode-bidi:isolate}code{font-family:Consolas,"Liberation Mono",monospace;font-size:.87em;overflow-wrap:anywhere;background:#edf0ec;border-radius:5px;padding:3px 6px;letter-spacing:0}pre{direction:ltr;text-align:left;unicode-bidi:isolate;background:#173239;color:#e5f2ee;border-radius:13px;padding:20px;overflow:auto;font-size:13px;line-height:1.75;max-width:100%;white-space:pre}pre code{background:none;color:inherit;padding:0;direction:ltr;overflow-wrap:normal;font-size:inherit}ul,ol{padding-inline-start:25px;margin:10px 0 20px}li{margin-bottom:7px}small,.small{font-size:.85rem}.muted{color:var(--muted)}.eyebrow{font-size:.76rem;letter-spacing:.08em;color:var(--accent);font-weight:bold;margin-bottom:12px}.tag{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:.78rem;font-weight:bold;background:var(--paper)}.tag::before{content:"";width:6px;height:6px;border-radius:100%;background:var(--accent)}
+    .skip-link{position:fixed;top:-80px;right:20px;z-index:30;background:var(--paper);border:2px solid var(--accent);border-radius:8px;padding:9px 15px}.skip-link:focus{top:8px}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(246,245,240,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.topbar-inner{max-width:1400px;margin:auto;padding:16px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);font-weight:bold;line-height:1.4}.brand-icon{width:37px;height:37px;background:var(--navy);color:#d6e8cb;display:grid;place-items:center;border-radius:10px;flex:none}.brand small{display:block;color:var(--muted);font-size:.68rem;font-weight:normal;letter-spacing:.02em}.header-actions{display:flex;align-items:center;gap:12px}.button{border:1px solid var(--line);background:var(--paper);padding:9px 17px;border-radius:9px;font-size:.86rem;font-weight:bold;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;line-height:1.5}.button:hover{border-color:var(--accent);background:var(--soft)}.button.primary{background:var(--accent);border-color:var(--accent);color:white}.button.primary:hover{background:#066456}.button.danger{color:var(--danger);border-color:#dfbcbc}.menu-button{display:none}.reading-progress{height:3px;background:var(--line)}.reading-progress span{display:block;height:100%;background:var(--accent);width:0;transition:width .1s}
+    .layout{display:grid;grid-template-columns:220px minmax(0,950px);gap:50px;max-width:1300px;margin:auto;padding:0 32px}.sidebar{position:sticky;top:105px;align-self:start;height:calc(100vh - 125px);overflow:auto;padding:38px 0 20px}.sidebar-title{font-size:.73rem;color:var(--muted);margin-bottom:14px;letter-spacing:.06em}.sidebar nav{display:grid;gap:3px}.sidebar a{display:flex;gap:12px;text-decoration:none;color:var(--muted);font-size:.83rem;padding:8px 10px;border-radius:8px;line-height:1.5}.sidebar a:hover,.sidebar a[aria-current="location"]{background:#e5ece4;color:var(--accent)}.nav-num{font-family:Consolas,monospace;font-size:.72rem;opacity:.7;min-width:19px;padding-top:2px}.sidebar-note{border-top:1px solid var(--line);padding:20px 8px;margin-top:20px;font-size:.75rem;color:var(--muted)}main{min-width:0;padding-bottom:70px}.hero{padding:64px 0 42px}.hero .intro{font-size:1.15rem;max-width:660px;color:var(--muted);line-height:1.8}.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:25px}.hero-line{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:24px}.hero-meta{font-size:.76rem;color:var(--muted)}.hero h1 span{color:var(--accent)}.hero-foot{font-size:.82rem;color:var(--muted);margin:20px 0 0}.chapter{border-top:1px solid var(--line);padding:43px 0 44px;scroll-margin-top:10px}.chapter-head{display:flex;align-items:flex-start;gap:15px;margin-bottom:18px}.chapter-no{font-family:Consolas,monospace;font-size:.8rem;color:var(--accent);border:1px solid #c7d6cc;padding:5px 8px;border-radius:7px;line-height:1.5;margin-top:7px;flex:none}.lead{font-size:1.08rem;color:var(--muted);max-width:760px}.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:24px;min-width:0}.card p:last-child{margin-bottom:0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.card-index{font-family:Consolas,monospace;color:var(--accent);font-size:.8rem;margin-bottom:18px}.callout{border-inline-start:3px solid var(--accent);background:var(--soft);padding:19px 22px;border-radius:0 12px 12px 0;margin:22px 0}.callout p:last-child{margin-bottom:0}.callout.warn{border-color:#bb8a39;background:var(--amber-bg);color:#67481d}.callout.note{background:var(--blue-bg);border-color:var(--blue);color:#244a70}.definition{font-size:.92rem;color:var(--muted)}.table-wrap{max-width:100%;overflow:auto;margin:20px 0;border:1px solid var(--line);border-radius:13px;background:var(--paper)}table{width:100%;border-collapse:collapse;text-align:right;font-size:.87rem;line-height:1.7}th{background:#edf1ea;font-weight:bold;color:var(--navy)}th,td{padding:14px 17px;border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}.table-wrap.wide table{min-width:630px}.source-link{font-size:.8rem;color:var(--muted)}details{border:1px solid var(--line);background:var(--paper);border-radius:12px;margin:14px 0;padding:0 20px}summary{cursor:pointer;font-weight:bold;font-size:.92rem;padding:16px 0}details[open]{padding-bottom:16px}details>p{font-size:.93rem}details pre{margin-bottom:0}.step-list{list-style:none;padding:0;counter-reset:steps}.step-list>li{counter-increment:steps;position:relative;padding:0 40px 20px 0;margin:0}.step-list>li::before{content:counter(steps);position:absolute;right:0;top:0;border:1px solid var(--line);width:26px;height:26px;border-radius:50%;text-align:center;line-height:26px;color:var(--accent);font-size:.78rem;font-weight:bold}.step-list strong{display:block;margin-bottom:3px}.mini{font-size:.82rem;color:var(--muted)}
+    .isolation-figure{border:1px solid var(--line);border-radius:var(--radius);padding:25px;background:var(--paper);margin:25px 0}.figure-caption{font-size:.8rem;color:var(--muted);margin-top:15px}.billing{margin:0 auto 20px;max-width:360px;border:1px solid #c3d4c6;background:var(--soft);padding:13px;text-align:center;border-radius:10px;font-size:.88rem}.project-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.project-box{border:1px solid #b8cfc8;border-radius:13px;overflow:hidden}.project-title{background:#e7f0e9;padding:12px 16px;font-weight:bold;font-size:.9rem}.project-body{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.resource{background:#f1f4ef;padding:10px 6px;text-align:center;border-radius:7px;font-size:.75rem}.separate-project{margin-top:20px;border:1px dashed #bac3bf;border-radius:10px;padding:12px 16px;color:var(--muted);font-size:.82rem}.pipeline-flow{display:flex;gap:8px;align-items:stretch;margin:23px 0;flex-wrap:wrap}.flow-node{flex:1;min-width:120px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:14px 12px;font-size:.81rem;text-align:center}.flow-node strong{display:block;color:var(--accent);margin-bottom:5px}.flow-arrow{align-self:center;color:#81988a;font-size:1.2rem}.profile{position:relative}.profile.recommended{border-color:#8fb7a0;box-shadow:0 0 0 2px #e5eee4}.profile-price{font-size:2rem;font-weight:bold;line-height:1.4;color:var(--navy);direction:ltr;text-align:right;margin:15px 0 3px}.profile .tag{margin-bottom:15px}.calculator{background:#edf2eb;border:1px solid #cddccc;padding:28px;border-radius:var(--radius);margin-top:28px}.calculator .grid{margin-bottom:14px}.field label{font-size:.84rem;font-weight:bold;display:block;margin-bottom:6px}.field input{width:100%;padding:11px 13px;border:1px solid #c5d0c4;border-radius:8px;background:var(--paper);color:var(--ink);direction:ltr;text-align:right}.field input:focus{border-color:var(--accent)}.radio-row{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0;font-size:.87rem}.radio-row label{cursor:pointer;display:flex;align-items:center;gap:7px}.calc-results{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:17px}.calc-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.metric{font-size:1.8rem;font-weight:bold;display:block;line-height:1.5}.metric-label{font-size:.76rem;color:var(--muted)}#budget-status{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line);font-size:.9rem}#budget-status[data-fit="no"]{color:var(--danger)}#budget-status[data-fit="yes"]{color:var(--accent)}.digest-demo{background:var(--navy);color:#edf6f0;border-radius:var(--radius);padding:27px;margin:24px 0}.digest-demo h3{color:#d7ebd2}.digest-demo p{color:#d7e3df}.digest-demo code{background:#2c4b50;color:#ddf0df}.digest-boxes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}.digest-box{background:#23464c;border:1px solid #56736c;border-radius:10px;padding:17px;font-size:.87rem}.digest-box small{display:block;color:#abc6bb;margin-bottom:7px}.digest-box code{font-size:.77rem;display:block;margin-top:10px;direction:ltr;text-align:left}.copy-proof{color:#d0e8bb;font-size:.85rem}.simulator{border:1px solid var(--line);background:var(--paper);border-radius:var(--radius);padding:25px;margin:25px 0}.traffic{background:#edf1e9;text-align:center;border-radius:9px;padding:12px;margin:16px 0;font-size:.88rem}.slots{display:grid;grid-template-columns:1fr 1fr;gap:15px}.slot{padding:20px;border:1px solid var(--line);border-radius:12px;transition:border-color .2s,background .2s}.slot.active{border-color:var(--accent);background:var(--soft)}.slot[data-color="blue"] .slot-title{color:var(--blue)}.slot[data-color="green"] .slot-title{color:var(--accent)}.slot-title{font-size:.8rem;font-weight:bold}.slot-version{font-size:1.7rem;font-weight:bold;margin:10px 0}.slot-status{font-size:.82rem;color:var(--muted)}.sim-controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}.sim-message{background:#f0f3ed;border-radius:9px;padding:13px 16px;margin:18px 0 0;font-size:.87rem;min-height:75px}.sim-message.error{background:var(--red-bg);color:var(--danger)}.journal{font-family:Consolas,monospace;font-size:.75rem;direction:ltr;text-align:left;color:var(--muted);margin-top:13px;overflow-wrap:anywhere}.ha-figure{border:1px solid var(--line);padding:24px;border-radius:var(--radius);background:var(--paper);margin:24px 0}.lb{background:var(--navy);color:white;padding:12px;text-align:center;border-radius:9px;margin-bottom:20px}.zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.zone{border:1px dashed #a5bfb2;border-radius:10px;padding:17px;text-align:center;font-size:.85rem}.zone span{display:block;background:var(--soft);margin-top:10px;border-radius:7px;padding:12px;font-weight:bold}.checklist{list-style:none;padding:0;display:grid;gap:9px}.checklist li{margin:0}.checklist label{display:flex;gap:12px;padding:14px 17px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:.88rem;cursor:pointer;align-items:flex-start}.checklist input{accent-color:var(--accent);width:17px;height:17px;margin-top:5px;flex:none}.checklist input:checked+span{color:var(--muted);text-decoration:line-through}.check-progress{display:flex;align-items:center;gap:15px;margin:16px 0;font-size:.83rem}.check-progress progress{width:180px;height:9px;accent-color:var(--accent)}.glossary-search{width:100%;border:1px solid var(--line);padding:13px 16px;border-radius:10px;background:var(--paper);margin:12px 0 20px}.glossary{display:grid;grid-template-columns:1fr 1fr;gap:12px}.term{border:1px solid var(--line);border-radius:12px;padding:17px;background:var(--paper)}.term dt{font-weight:bold;color:var(--accent);font-size:.94rem;margin-bottom:5px}.term dd{margin:0;color:var(--muted);font-size:.86rem}.term[hidden]{display:none}.empty-state{padding:20px;background:var(--amber-bg);border-radius:12px;font-size:.9rem}.footer{border-top:1px solid var(--line);padding-top:25px;color:var(--muted);font-size:.81rem}.footer p{margin-bottom:9px}.source-markdown{max-height:650px;white-space:pre-wrap;overflow-wrap:anywhere}.source-list{columns:2;column-gap:30px;font-size:.84rem}.source-list li{break-inside:avoid;margin-bottom:10px}.print-only{display:none}[hidden]{display:none!important}
+    @media(max-width:1100px){.layout{grid-template-columns:190px minmax(0,1fr);gap:28px;padding:0 25px}.sidebar a{font-size:.78rem;padding:8px 5px}.hero{padding-top:43px}.grid.three{grid-template-columns:1fr}.profile-price{font-size:1.7rem}.profile{display:block}}
+    @media(max-width:800px){.layout{display:block;padding:0 22px}.sidebar{display:none;position:fixed;top:81px;right:0;width:min(320px,90vw);height:calc(100dvh - 81px);z-index:12;background:var(--paper);padding:22px;box-shadow:-10px 0 25px #193b4220}.sidebar.open{display:block}.sidebar a{font-size:.9rem}.menu-button{display:inline-flex}.topbar-inner{padding:13px 20px}.hero{padding:35px 0}.hero-meta{font-size:.67rem}.hero .intro{font-size:1.02rem}.hero-line{align-items:flex-start}.chapter{padding:32px 0}.grid,.grid.three{grid-template-columns:1fr}.project-grid,.digest-boxes,.zone-grid{gap:10px}.project-body{grid-template-columns:1fr}.project-title{font-size:.78rem;padding:11px}.isolation-figure,.ha-figure{padding:16px}.calc-metrics{gap:10px}.metric{font-size:1.4rem}.calculator{padding:18px}.header-actions .print-label{display:none}.header-actions{gap:8px}.button{font-size:.8rem;padding:9px 13px}.glossary{grid-template-columns:1fr}.source-list{columns:1}.card{padding:20px}}
+    @media(max-width:420px){.layout{padding:0 16px}.topbar-inner{padding:12px 15px}.brand{gap:8px;font-size:.9rem}.brand-icon{width:32px;height:32px}.hero-line{flex-direction:column;gap:7px}h1{font-size:2.8rem}.slots{gap:10px}.slot{padding:14px}.slot-version{font-size:1.4rem}.calc-metrics{grid-template-columns:1fr 1fr}.calc-metrics>div:last-child{grid-column:1/-1}.source-markdown{font-size:11px}.project-grid{grid-template-columns:1fr}.zone-grid{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+    @media print{@page{size:A4;margin:18mm}body{background:white;font-size:11pt;color:#111}.topbar,.sidebar,.hero-actions,.sim-controls,.calculator form,.glossary-search,.no-print,.reading-progress,.skip-link,#glossary-empty,#glossary-count{display:none!important}.layout{display:block;padding:0;max-width:none}.hero{padding:0 0 20px}h1{font-size:30pt}h2{font-size:20pt}h3{font-size:13pt}.chapter{padding:22px 0}.card,.callout,.calculator,.simulator,.digest-demo,.ha-figure,.isolation-figure,.term{box-shadow:none;break-inside:avoid;background:white;color:#111;border:1px solid #bbb}.digest-demo p,.digest-demo h3,.digest-demo code{color:#111;background:white}.table-wrap{overflow:visible}table{font-size:9pt}.table-wrap.wide table{min-width:0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f2f2f2;color:#111;font-size:8pt}.source-markdown{max-height:none}.grid.three{grid-template-columns:1fr 1fr 1fr}a{color:#111}.source-list{columns:1}.chapter-head{break-after:avoid}.print-only{display:block}#source-original{display:none}.glossary .term{display:block!important}.footer{font-size:9pt}}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">מעבר לתוכן</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#start"><span class="brand-icon" aria-hidden="true">△</span><span><bdi>geometrydash-ui</bdi><small>מחברת פריסה · GCP / DEVOPS</small></span></a>
+      <div class="header-actions"><button type="button" class="button" id="print-button" aria-label="הדפסה או שמירה כ־PDF"><span aria-hidden="true">↗</span><span class="print-label">הדפסה / שמירה כ־PDF</span><span class="print-only">הדפסה</span></button><button type="button" class="button menu-button" id="menu-button" aria-expanded="false" aria-controls="side-navigation">פרקים ☰</button></div>
+    </div>
+    <div class="reading-progress" aria-hidden="true"><span id="reading-progress"></span></div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" id="side-navigation" aria-label="ניווט בין פרקי המדריך">
+      <div class="sidebar-title">מה נלמד כאן</div>
+      <nav>
+        <a href="#overview"><span class="nav-num">01</span>התמונה הגדולה</a>
+        <a href="#isolation"><span class="nav-num">02</span>תשתית עצמאית</a>
+        <a href="#budget"><span class="nav-num">03</span>עלויות ותקופת הניסיון</a>
+        <a href="#environments"><span class="nav-num">04</span>סביבות העבודה</a>
+        <a href="#terraform"><span class="nav-num">05</span>תשתית כקוד והרשאות</a>
+        <a href="#images"><span class="nav-num">06</span>החבילה שמעלים לענן</a>
+        <a href="#pipelines"><span class="nav-num">07</span>בדיקות ושחרור גרסאות</a>
+        <a href="#rollback"><span class="nav-num">08</span>החלפת גרסה ושחזור</a>
+        <a href="#monitoring"><span class="nav-num">09</span>ניטור והתראות</a>
+        <a href="#availability"><span class="nav-num">10</span>זמינות גבוהה והתרחבות</a>
+        <a href="#portfolio"><span class="nav-num">11</span>סדר ביצוע והוכחות</a>
+        <a href="#glossary"><span class="nav-num">א–ת</span>מילון מושגים</a>
+        <a href="#references"><span class="nav-num">↗</span>דוגמאות ומסמך המקור</a>
+      </nav>
+      <div class="sidebar-note">קובץ עצמאי לקריאה בדפדפן.<br>התרגילים הם הדמיה מקומית בלבד.<br>כל 11 פרקי התכנית מוסברים כאן.</div>
+    </aside>
+    <main id="content">
+      <div class="callout" role="note"><strong>עדכון: המימוש הנוכחי הוא Production בלבד</strong><p>נוספו למאגר Terraform, תהליכי GitHub Actions, ניטור ופריסה עם Rollback. מתחילים ב־<a href="PRODUCTION_SETUP.md">מדריך ההקמה המעשי</a> וממלאים עותק של <code>infra/account.example.json</code>. התצורות של Dev ו־Staging אינן פעילות; המדריך שלהלן מסביר גם את תכנית ההרחבה העתידית. המשאבים ייווצרו רק אחרי חיבור החשבון והרצת ההקמה.</p></div>
+      <section class="hero" id="start">
+        <div class="hero-line"><span class="tag">תשתית עצמאית · הסבר בעברית</span><span class="hero-meta">לפי תכנית הפריסה מ־15.10.2026</span></div>
+        <h1>להבין את הדרך<br>מהקוד <span>אל הענן.</span></h1>
+        <p class="intro">המדריך המלא של <bdi>geometrydash-ui</bdi>, בשפה פשוטה: מה בונים, למה צריך כל רכיב, איך גרסה עוברת בדיקות, ומה עושים כשמשהו מתקלקל.</p>
+        <div class="hero-actions"><a class="button primary" href="#overview">מתחילים מהתמונה הגדולה ←</a><a class="button" href="#images">מה משמעות ״קידום אותה גרסה״?</a></div>
+        <p class="hero-foot">מדריך הבנה ויישום לתכנית <code>GCP_DEPLOYMENT.md</code>. הקובץ אינו יוצר משאבים או מבצע פריסה בענן.</p>
+      </section>
+
+      <section class="chapter" id="overview" aria-labelledby="overview-title">
+        <div class="chapter-head"><span class="chapter-no">01</span><div><div class="eyebrow">לפני שמדברים על כלים</div><h2 id="overview-title">מה אנחנו מנסים להשיג?</h2></div></div>
+        <p class="lead">להפוך את האפליקציה למערכת שאפשר להקים מחדש, לבדוק לפני פרסום, לנטר בזמן אמת ולשחזר במהירות—בתקציב שאפשר להסביר.</p>
+        <p>האפליקציה הנוכחית היא אתר מבוסס <bdi>React, Vite ו־Three.js</bdi>. הפקודה <code>npm run build</code> יוצרת תיקיית <code>dist/</code> ובה קובצי האתר. שרת קטן מגיש את הקבצים; הדפדפן של המשתמש מצייר את הגיאומטריה וקורא את הקבצים המיובאים.</p>
+        <div class="grid"><article class="card"><div class="card-index">בדפדפן של המשתמש</div><h3>צפייה ועיבוד קבצים מקומיים</h3><p>מודלים, תצוגת <bdi>WebGL</bdi> ועבודת הייבוא מתבצעים בדפדפן. ה־<bdi>Web Worker</bdi> כאן הוא רכיב בדפדפן, לא מכונה בענן. הנתונים המיובאים נשמרים בזיכרון ועלולים להיעלם ברענון.</p></article><article class="card"><div class="card-index">בתשתית שלנו</div><h3>הגשת האתר והפעלתו</h3><p>המכונה בענן מגישה את האתר דרך <bdi>HTTPS</bdi>. התכנית מוסיפה ניהול גרסאות, בדיקות אוטומטיות, זהויות, ניטור ושחזור. כרגע אין צורך במסד נתונים או במעבד גיאומטריה בצד השרת.</p></article></div>
+        <h3>שלושה שלבי התקדמות</h3>
+        <ol class="step-list"><li><strong>מעבדה עצמאית חדשה</strong>מקימים מכונת ניסוי בפרויקט חדש, מתרגלים פריסה ותקלה, ומוודאים שהתראה מגיעה.</li><li><strong>מערכת יומיומית לתקופת הניסיון</strong>מוסיפים פרויקט ייצור עם מכונה רגילה משלו. סביבת הבדיקות פועלת לפי הצורך.</li><li><strong>תרגול זמינות גבוהה</strong>מחליפים את מכונת הייצור בקבוצת מכונות בשני Zones באותו Region ובמאזן עומסים, כאשר התקציב והמכסות מאפשרים זאת.</li></ol>
+        <div class="callout"><strong>מה מדגים יכולת מקצועית?</strong><p>יכולת להראות שבדיקה עצרה גרסה שבורה, ששחזור באמת עבד, שהתראה נשלחה ושאפשר להקים את המערכת מחדש מתוך קוד. המטרה היא תהליך שניתן להוכיח ולתחזק.</p></div>
+      </section>
+
+      <section class="chapter" id="isolation" aria-labelledby="isolation-title">
+        <div class="chapter-head"><span class="chapter-no">02</span><div><div class="eyebrow">ההפרדה שביקשת</div><h2 id="isolation-title">לאפליקציה יש משאבים משלה</h2></div></div>
+        <p class="lead">משאבי <code>meshseg-worker</code> שייכים לפרויקט אחר. התכנית הזו מקימה תשתית חדשה ועצמאית ל־<bdi>geometrydash-ui</bdi>.</p>
+        <figure class="isolation-figure" aria-label="שני פרויקטים חדשים של האפליקציה, המחוברים לחשבון חיוב משותף בלבד; הפרויקט הישן נפרד">
+          <div class="billing"><strong>חשבון החיוב של תקופת הניסיון</strong><br><span class="small">יכול לשלם על כמה פרויקטים נפרדים</span></div>
+          <div class="project-grid"><div class="project-box"><div class="project-title">פרויקט חדש: סביבת בדיקות<br><code>geometrydash-ui-nonprod-UNIQUE</code></div><div class="project-body"><div class="resource">מכונת Staging</div><div class="resource">רשת וחומת אש</div><div class="resource">זהויות והרשאות</div><div class="resource">מאגר תמונות</div><div class="resource">מצב Terraform</div><div class="resource">לוגים וניטור</div></div></div><div class="project-box"><div class="project-title">פרויקט חדש: סביבת ייצור<br><code>geometrydash-ui-prod-UNIQUE</code></div><div class="project-body"><div class="resource">מכונת Production</div><div class="resource">רשת וחומת אש</div><div class="resource">זהויות והרשאות</div><div class="resource">מאגר תמונות</div><div class="resource">מצב Terraform</div><div class="resource">לוגים וניטור</div></div></div></div>
+          <div class="separate-project"><strong>הפרויקט האחר: meshseg</strong> · נשאר מחוץ לתכנית. אין חיבור לרשת שלו, למכונה שלו, ל־bucket שלו או לזהויות שלו.</div>
+          <figcaption class="figure-caption">שמות הפרויקטים הם דוגמאות; מזהי הפרויקטים בפועל צריכים להיות ייחודיים וזמינים.</figcaption>
+        </figure>
+        <div class="table-wrap"><table><thead><tr><th>מה מקימים מחדש?</th><th>המשמעות</th></tr></thead><tbody><tr><td>מחשוב ורשת</td><td>מכונות, כתובות IP, רשת <bdi>VPC</bdi>, תת־רשת וכללי חומת אש משלהם.</td></tr><tr><td>זהויות ואוטומציה</td><td>חשבונות שירות וזהויות CI חדשים. לא מעניקים להם הרשאות בפרויקט האחר.</td></tr><tr><td>אחסון ו־Terraform</td><td>מאגר תמונות ו־bucket פרטי למצב התשתית בכל סביבה. לא מעתיקים את קובץ המצב הישן ולא מאמצים את המשאבים שלו.</td></tr><tr><td>ניטור</td><td>לוחות בקרה, התראות ולוגים של האפליקציה הזו בלבד.</td></tr><tr><td>קישוריות</td><td>אין <bdi>Shared VPC</bdi>, קישור רשת או הרשאות גישה לפרויקט האחר.</td></tr><tr><td>חיוב</td><td>אותו חשבון חיוב יכול לממן את כולם. ההוצאות מצטברות באותה יתרת ניסיון, בלי לאחד את התשתיות.</td></tr></tbody></table></div>
+        <div class="callout note"><strong>אין צורך להעתיק את כל מה שהיה בפרויקט הקודם.</strong><p>למשל, לאתר הנוכחי לא נדרש bucket של קובצי גיאומטריה. האחסון החדש נועד למצב התשתית ולתוצרי שחרור לפי הצורך. אם נוסיף בעתיד עיבוד מרחוק, נקים עבורו API ומשאבים ייעודיים.</p></div>
+      </section>
+
+      <section class="chapter" id="budget" aria-labelledby="budget-title">
+        <div class="chapter-head"><span class="chapter-no">03</span><div><div class="eyebrow">מתכננים לפני שמפעילים</div><h2 id="budget-title">איך זה נכנס לתקציב הניסיון?</h2></div></div>
+        <p class="lead">מפרידים בין מחיר התשתית החדשה ובין קצב ניצול האשראי של כל חשבון החיוב.</p>
+        <p>לפי מסמך התכנית, תקופת הניסיון הרגילה כוללת אשראי של <bdi>$300</bdi> ל־90 ימים, בכפוף לתנאים. פתיחת פרויקט נוסף אינה יוצרת עוד אשראי. אם כמה פרויקטים משויכים לאותו חשבון, כולם צורכים את אותה יתרה. בחשבון ניסיון שלא שודרג, המשאבים נעצרים כשהניסיון או האשראי נגמרים. בשדרוג לחשבון בתשלום, אשראי שעדיין בתוקף נשמר, אך אפשר לחייב על שימוש שלא מכוסה בו.</p>
+        <p class="source-link">התנאים עשויים להשתנות. לפני יצירת משאבים בודקים את <a href="https://docs.cloud.google.com/free/docs/free-cloud-features" target="_blank" rel="noopener noreferrer">תנאי הניסיון</a>, היתרה והתאריך בחשבון בפועל. קיימות גם מגבלות מכסה; בתקופת הניסיון ייתכן שלא ניתן להגדיל אותן.</p>
+        <div class="grid three"><article class="card profile"><span class="tag">פרופיל A</span><h3>מעבדה להתחלה</h3><p>מכונה חדשה אחת בסביבת ניסוי. מספיק כדי ללמוד את תהליך השחרור ולהדגים שחזור.</p><p class="mini">עדיין אין סביבת ייצור עצמאית, וכל המעבדה תלויה במכונה אחת.</p></article><article class="card profile recommended"><span class="tag">פרופיל B · נקודת הפתיחה המומלצת</span><h3>ייצור + בדיקות לפי הצורך</h3><div class="profile-price">~$37<span class="small"> / חודש</span></div><p>מכונת ייצור רגילה, ומכונת בדיקות חדשה שמופעלת לפי הצורך. שני פרויקטים נפרדים.</p><p class="mini">אומדן לימודי לפי ההנחות למטה. מכונת הייצור עדיין נקודת כשל יחידה.</p></article><article class="card profile"><span class="tag">פרופיל C</span><h3>ייצור עם זמינות גבוהה</h3><div class="profile-price">~$75<span class="small"> / חודש</span></div><p>שתי מכונות ייצור בשני Zones, מאזן עומסים וסביבת בדיקות עצמאית.</p><p class="mini">אפשר להפעיל גם כתרגיל מוגבל בזמן. לא מספק הגנה מפני נפילה של Region שלם.</p></article></div>
+        <details><summary>מאיפה מגיעים המספרים $37 ו־$75?</summary><p>זו דוגמת חישוב, לא הצעת מחיר: מניחים מכונה במחיר <bdi>$0.02</bdi> לשעה, 730 שעות בחודש, ודיסק במחיר <bdi>$0.10</bdi> ל־GiB בחודש. סביבת הבדיקות פועלת 40 שעות בחודש, עם דיסק 20 GiB וכתובת IP קבועה שנשמרת גם בכיבוי. מחירי VM ודיסק אלה הם הנחות ויש להחליפם במחירי האזור הנבחר.</p><div class="table-wrap wide"><table><thead><tr><th>רכיב</th><th>פרופיל B</th><th>פרופיל C</th></tr></thead><tbody><tr><td>מחשוב לייצור</td><td><bdi>$14.60</bdi></td><td><bdi>$29.20</bdi></td></tr><tr><td>דיסקי ייצור</td><td><bdi>$2.00</bdi></td><td><bdi>$4.00</bdi></td></tr><tr><td>כתובות IP למכונות ייצור</td><td><bdi>$3.65</bdi></td><td><bdi>$7.30</bdi></td></tr><tr><td>כללי העברה למאזן עומסים</td><td><bdi>$0</bdi></td><td><bdi>$18.25</bdi></td></tr><tr><td>סביבת בדיקות מתוזמנת</td><td><bdi>$6.45</bdi></td><td><bdi>$6.45</bdi></td></tr><tr><td>עתודה תכנונית ללוגים, אחסון, DNS, תעבורה וחפיפת שחרורים</td><td><bdi>$10</bdi></td><td><bdi>$10</bdi></td></tr><tr><td><strong>סך חישוב לחודש</strong></td><td><strong><bdi>$36.70</bdi></strong></td><td><strong><bdi>$75.20</bdi></strong></td></tr></tbody></table></div><p>לפי התכנית, אומדן גס לשלושה חודשים הוא כ־<bdi>$111</bdi> או כ־<bdi>$225</bdi>, בהתאמה. חשבונות GitHub, רישום דומיין והוצאות בפרויקטים האחרים אינם כלולים. עתודת $10 אינה מגבלת שימוש. גם IP שנשמר, דיסק, או מאזן עומסים עלולים להמשיך לעלות כשהמכונה כבויה.</p></details>
+        <div class="calculator" id="budget-calculator"><h3>נסו את המספרים שלכם</h3><p class="definition">המחשבון מחשב תקציב בטוח לפי יתרה, זמן, הוצאות אחרות ועתודה. הוא משתמש באומדני התכנית; הוא אינו מחובר לחשבון GCP.</p>
+          <form id="budget-form"><div class="grid"><div class="field"><label for="credit">אשראי שנותר, בדולרים</label><input id="credit" type="number" min="0" step="0.01" value="180" required></div><div class="field"><label for="days">ימים עד סוף הניסיון</label><input id="days" type="number" min="1" step="1" value="60" required></div><div class="field"><label for="other-spend">הוצאות יומיות של שאר הפרויקטים, בדולרים</label><input id="other-spend" type="number" min="0" step="0.01" value="1" required></div><div class="field"><label for="reserve">אחוז היתרה ששומרים כעתודה</label><input id="reserve" type="number" min="0" max="100" step="1" value="20" required></div></div><fieldset style="border:0;padding:0;margin:0"><legend class="small">איזו תשתית מדמים?</legend><div class="radio-row"><label><input type="radio" name="profile" value="B" checked> פרופיל B: כ־$37 בחודש</label><label><input type="radio" name="profile" value="C"> פרופיל C: כ־$75 בחודש</label></div></fieldset></form>
+          <div class="calc-results" role="status" aria-live="polite" aria-atomic="true"><div class="calc-metrics"><div><span class="metric" id="safe-daily" dir="ltr">$2.40</span><span class="metric-label">תקציב יומי לכל החשבון</span></div><div><span class="metric" id="available-monthly" dir="ltr">$42.00</span><span class="metric-label">תקציב חדש ל־30 יום</span></div><div><span class="metric" id="profile-cost" dir="ltr">$36.70</span><span class="metric-label">עלות פרופיל משוערת לחודש</span></div></div><p id="budget-status" data-fit="yes">בדוגמה הזו פרופיל B נכנס בתקציב עם העתודה שבחרתם.</p></div>
+          <p class="mini" style="margin:12px 0 0">נוסחה: (יתרה פחות עתודה) ÷ ימים = תקציב יומי כולל. מפחיתים את ההוצאות היומיות האחרות ומכפילים ב־30. האומדן אינו התחייבות למחיר או לחיוב בפועל.</p>
+        </div>
+        <h3 style="margin-top:26px">מה עושים כדי לא לשרוף את האשראי?</h3>
+        <ul><li>מתחילים בעתודה של 20% ומסתכלים על ההוצאה האמיתית ב־7 הימים האחרונים.</li><li>מגדירים התראות תקציב ב־50%, 80% ו־100%. התראת תקציב מודיעה; היא אינה עוצרת הוצאות.</li><li>מתזמנים כיבוי עצמאי ל־Staging, כך שגם כישלון או ביטול CI לא ישאירו אותה פועלת לנצח.</li><li>מגדירים תאריך סיום לתרגיל HA ומסירים אחריו גם מאזן עומסים, IP ומשאבים זמניים.</li><li>מתייגים משאבים לפי אפליקציה, סביבה, בעלים, ניהול ומרכז עלות.</li><li>שומרים גרסה נוכחית וגרסת שחזור; מנקים גרסאות ישנות במאגר, אחרי בדיקה במצב <bdi>dry run</bdi>.</li><li>בודקים יתרה ותוקף מדי שבוע. לא מניחים שה־<bdi>Free Tier</bdi> הקבוע מכסה את פרופיל התשתית או את סוג הדיסק שבחרנו.</li></ul>
+      </section>
+
+      <section class="chapter" id="environments" aria-labelledby="environments-title">
+        <div class="chapter-head"><span class="chapter-no">04</span><div><div class="eyebrow">מי משתמש בכל סביבה?</div><h2 id="environments-title">Dev, Staging ו־Production</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>סביבה</th><th>מה עושים בה?</th><th>איפה היא נמצאת?</th></tr></thead><tbody><tr><td><strong>Dev</strong><br>פיתוח</td><td>משנים קוד, מתנסים ומריצים בדיקות מקומיות.</td><td>המחשב המקומי ו־runners מבודדים של CI.</td></tr><tr><td><strong>Staging</strong><br>בדיקות לפני פרסום</td><td>מריצים את החבילה שמועמדת לייצור ובודקים תרחישי משתמש.</td><td>מכונה חדשה ומתוזמנת בפרויקט הלא־ייצורי.</td></tr><tr><td><strong>Production</strong><br>ייצור</td><td>משרתים את האתר היציב שמשתמשים אמיתיים פותחים.</td><td>מכונה חדשה רגילה בפרויקט הייצור; בהמשך קבוצת מכונות.</td></tr></tbody></table></div>
+        <p>אם מכסת הפרויקטים עדיין לא מאפשרת שני פרויקטים חדשים, מתחילים רק במעבדה הלא־ייצורית. לא מחליפים את ההפרדה בשימוש בפרויקט האחר.</p>
+        <h3>איך מגיעים לאתר?</h3><p>משתמשי הייצור נכנסים בדומיין דרך <bdi>HTTPS</bdi>. פרוקסי על המכונה מנהל את חיבור ה־TLS ומעביר את הבקשה לקונטיינר הפעיל. הקונטיינרים מאזינים בכתובות מקומיות כמו <code>127.0.0.1:8081</code> ו־<code>127.0.0.1:8082</code>. רק הפרוקסי חושף את פורטי הווב המתאימים.</p>
+        <p>סביבת בדיקות יכולה להישאר פרטית ולהיות נגישה דרך מנהרת <bdi>IAP</bdi>, או דרך HTTPS עם אימות. כשבודקים ב־IAP עדיין צריך לבדוק בנפרד את הדומיין והתעודה של הייצור.</p>
+        <div class="callout"><strong>Blue ו־Green הן גרסאות בתוך אותה סביבה.</strong><p>אלו שני מקומות להרצת גרסאות על אותה מכונה. הם אינם שתי סביבות Production עצמאיות. בהמשך נשתמש בהם כדי להעביר תעבורה בלי להסיר מיד את הגרסה הקודמת.</p></div>
+        <p>בדיקות של קוד מבקשות שינוי לא מהימנות רצות על runner מבודד. רק ענף שנבדק ואושר מקבל הרשאות לפריסה בענן.</p>
+      </section>
+
+      <section class="chapter" id="terraform" aria-labelledby="terraform-title">
+        <div class="chapter-head"><span class="chapter-no">05</span><div><div class="eyebrow">אפשר להקים את זה שוב</div><h2 id="terraform-title">Terraform, זהויות והרשאות</h2></div></div>
+        <p class="lead"><bdi>Infrastructure as Code</bdi> פירושו שהתיאור של המכונות, הרשתות וההרשאות נשמר בקבצים שנבדקים ב־Git. כך אפשר לשחזר את התשתית ולסקור שינויים לפני ביצוע.</p>
+        <div class="grid"><article class="card"><h3>הקוד: מה רוצים ליצור?</h3><p>קובצי Terraform מתארים, למשל, ״מכונת ייצור באזור מסוים, עם רשת משלה וחשבון שירות מסוים״. מציינים מזהה פרויקט מפורש בכל סביבת עבודה.</p></article><article class="card"><h3>ה־State: מה מנוהל כרגע?</h3><p>קובץ המצב מקשר בין התיאור בקוד ובין המשאבים בענן. לכל סביבה יש אחסון מצב פרטי משלה, עם היסטוריית גרסאות ונעילה נגד כתיבות מקבילות.</p></article></div>
+        <ol class="step-list"><li><strong>Bootstrap — הקמה ראשונית</strong>בוחרים שמות פרויקטים ייחודיים, אזורים וגודל מכונה; יוצרים פרויקטים ומשייכים חשבון חיוב בזהות מורשית.</li><li><strong>יוצרים אחסון למצב</strong>מקימים bucket פרטי לכל סביבה ומגדירים עבורו backend של <bdi>GCS</bdi>. מתעדים גם איפה נשמר מצב ההקמה הראשונית ואיך משחזרים אותו.</li><li><strong>מגדירים תשתית עצמאית</strong>יוצרים רשת, תת־רשת, חומת אש, VM, מאגר תמונות וזהויות חדשים. אין import, חיפוש משאבים או קישור לפרויקט האחר.</li><li><strong>בודקים Plan ואז מבצעים Apply</strong>ה־Plan מראה מה ייווצר, ישתנה או יימחק. בודקים שהפרויקטים נכונים ומבצעים את התכנית שנבדקה.</li></ol>
+        <div class="callout warn"><strong>State הוא חלק רגיש בתשתית.</strong><p>לא שומרים אותו במאגר קוד ציבורי, לא נותנים למכונת האתר גישה אליו ולא משתמשים ב־bucket של הפרויקט האחר. גם קובצי Plan עלולים להכיל מידע רגיש. נועלים גרסאות Terraform וספקים ושומרים את <code>.terraform.lock.hcl</code> ב־Git.</p></div>
+        <h3>הפעלת APIs</h3><p>בפרויקטים החדשים מפעילים את שירותי Compute, Storage, IAP, IAM, IAM Credentials, STS, Artifact Registry, Logging ו־Monitoring לפי הצורך. ״הפעלת API״ מאפשרת להשתמש בשירות; היא לא מתקינה Agent ולא יוצרת לבד מכונה או התראות.</p>
+        <h3>מי רשאי לעשות מה?</h3><div class="table-wrap wide"><table><thead><tr><th>זהות</th><th>הרשאה נדרשת</th><th>למה מגבילים אותה?</th></tr></thead><tbody><tr><td>מכונת האתר</td><td>קריאת תמונות מהמאגר שלה; כתיבת לוגים ומדדים.</td><td>היא לא צריכה לשנות תשתית, לפרסם תמונות או לקרוא State.</td></tr><tr><td>בונה התמונה ב־CI</td><td>כתיבה למאגר הלא־ייצורי.</td><td>בניית חבילה לא מחייבת הרשאת ניהול על שרת ייצור.</td></tr><tr><td>מקדם הגרסה</td><td>קריאה מהמאגר הלא־ייצורי וכתיבה למאגר הייצור.</td><td>מעתיק רק את החבילה שנבדקה; אינו מנהל את השרתים.</td></tr><tr><td>פורס ל־Staging</td><td>גישה למכונת הבדיקות ופקודת הפריסה המאושרת.</td><td>אין לו גישה לייצור.</td></tr><tr><td>פורס ל־Production</td><td>גישה למכונת הייצור ופקודת הפריסה המאושרת.</td><td>אין לו הרשאות לפרויקט האחר או לניהול כל ההרשאות.</td></tr><tr><td>מפעיל Terraform</td><td>ניהול המשאבים וה־State של הסביבה שלו.</td><td>לא משתמשים בזהות הרחבה הזו בזמן ריצת האתר.</td></tr><tr><td>מקים הפרויקטים</td><td>יצירת פרויקטים וחיבור חיוב.</td><td>זהו שלב נפרד מפרסום גרסאות שגרתי.</td></tr></tbody></table></div>
+        <p>למכונת האתר נותנים <code>roles/logging.logWriter</code>, <code>roles/monitoring.metricWriter</code> ו־<code>roles/artifactregistry.reader</code> על המאגר שלה. מחברים את הזהות החדשה ל־VM, מגדירים scope מתאים ומתקינים את <bdi>Ops Agent</bdi>. Scope מסוג <code>cloud-platform</code> לא מעניק לבד הרשאות לכל הענן—ה־IAM עדיין קובע מה מותר.</p>
+        <details><summary>מה הם IAP, OS Login ו־Workload Identity Federation?</summary><p><strong>IAP</strong> מאפשר מנהרת גישה מזוהה למכונה; לא חייבים לפתוח SSH לכל האינטרנט. <strong>OS Login</strong> קושר את ההתחברות למכונה לזהות ולהרשאות ב־Google Cloud.</p><p><strong>Workload Identity Federation</strong> מאפשר ל־GitHub לקבל הרשאות זמניות לפי זהות ה־workflow, המאגר, הענף והסביבה. כך אין צורך לשמור מפתח JSON קבוע כדי לפרוס את האתר. ההרשאות והאמון מוגדרים בפרויקטים החדשים בלבד.</p><p>הגישה של פורֵס הייצור צריכה להיות לפקודת פריסה מוגדרת ומנוהלת. חברות בקבוצת Docker, גישה ל־socket שלו או <code>osAdminLogin</code> מעניקות למעשה יכולת ניהול של המארח; אם משתמשים במודל הזה במעבדה, מגבילים אותו למכונות הווב הייעודיות ומתעדים זאת. הרשאת <code>serviceAccountUser</code> מוגבלת לחשבון השירות של מכונת היעד.</p></details>
+        <details><summary>איך מסדרים את הקבצים במאגר?</summary><pre><code>infra/
+  bootstrap/                 # Project and state setup
+  environments/
+    nonprod/                 # Independent staging infrastructure
+    prod/                    # Independent production infrastructure
+  modules/
+    web-vm/
+    web-mig/
+    observability/
+ops/
+  nginx/
+  systemd/
+  deploy.sh
+  rollback.sh
+  smoke.mjs
+  runbooks/
+.github/workflows/
+  checks.yml
+  release.yml
+  infrastructure.yml
+  drift.yml
+Dockerfile
+.dockerignore</code></pre><p class="mini" style="margin-top:14px">זו רשימת תוצרים שמתכננים ליישם. עצם הופעת השמות במדריך אינה אומרת שהקבצים כבר קיימים או שהתשתית נפרסה.</p></details>
+      </section>
+
+      <section class="chapter" id="images" aria-labelledby="images-title">
+        <div class="chapter-head"><span class="chapter-no">06</span><div><div class="eyebrow">הפסקה על OCI, Layers ו־Digest</div><h2 id="images-title">בונים חבילה פעם אחת, ומקדמים אותה</h2></div></div>
+        <p class="lead">אחרי שבדקנו חבילת אפליקציה מסוימת, רוצים שהייצור יריץ בדיוק אותה חבילה.</p>
+        <div class="grid"><article class="card"><h3>Image — החבילה</h3><p>תמונת קונטיינר היא חבילה שמכילה את האתר ואת תוכנת שרת הווב הנדרשת. אצלנו היא כוללת את <code>dist/</code> ושרת <bdi>Nginx</bdi>. קונטיינר הוא מופע רץ של התמונה על מכונה.</p></article><article class="card"><h3>Registry — המחסן</h3><p><bdi>Artifact Registry</bdi> הוא שירות האחסון של חבילות ההפעלה בענן. <bdi>Repository</bdi> בפסקה הזו הוא מאגר תמונות קונטיינר. עדיין אפשר לנהל את כל קוד המקור במאגר GitHub אחד.</p></article></div>
+        <div class="pipeline-flow" aria-label="בנייה, בדיקות, העתקה ופריסה"><div class="flow-node"><strong>1 · בונים</strong>קוד → תמונה אחת</div><span class="flow-arrow" aria-hidden="true">←</span><div class="flow-node"><strong>2 · בודקים</strong>אותה תמונה ב־Staging</div><span class="flow-arrow" aria-hidden="true">←</span><div class="flow-node"><strong>3 · מעתיקים</strong>למאגר הייצור</div><span class="flow-arrow" aria-hidden="true">←</span><div class="flow-node"><strong>4 · פורסים</strong>לפי אותו Digest</div></div>
+        <div class="digest-demo"><h3>דוגמה: גרסה 1.2 שעברה בדיקות</h3><p>השם של מקום האחסון משתנה בין הסביבות; טביעת האצבע של התוכן נשארת זהה.</p><div class="digest-boxes"><div class="digest-box"><small>מאגר סביבת הבדיקות</small><bdi>geometrydash-ui-nonprod / web / 1.2</bdi><code>sha256:a12f9c…</code></div><div class="digest-box"><small>מאגר סביבת הייצור</small><bdi>geometrydash-ui-prod / web / 1.2</bdi><code>sha256:a12f9c…</code></div></div><div class="copy-proof">✓ אותה טביעת אצבע → אותה תמונה שנבדקה. הקיצור כאן הוא לצורך ההסבר בלבד.</div></div>
+        <div class="table-wrap"><table><thead><tr><th>המונח בפסקה</th><th>ההסבר הפשוט</th></tr></thead><tbody><tr><td><bdi>OCI</bdi></td><td>תקן שמתאר מבנה של תמונות קונטיינר ודרך להפיץ אותן.</td></tr><tr><td><bdi>Manifest</bdi></td><td>תיאור מובנה של התמונה: הוא מצביע לתצורה ולשכבות שמהן היא מורכבת.</td></tr><tr><td><bdi>Layers</bdi></td><td>השכבות שמרכיבות את מערכת הקבצים של התמונה—למשל קבצי שרת וקבצי אתר.</td></tr><tr><td><bdi>Digest</bdi></td><td>טביעת אצבע מחושבת של התוכן. משתמשים בה כדי לזהות במדויק את התמונה ולוודא שהעתקה לא שינתה אותה.</td></tr><tr><td><bdi>Promotion</bdi></td><td>קידום החבילה שאושרה בבדיקות אל סביבת הייצור.</td></tr><tr><td><bdi>Digest-preserving copy</bdi></td><td>העתקה ששומרת על המבנה והתוכן כך שה־Digest של תמונת היעד זהה לזה שנבדק.</td></tr></tbody></table></div>
+        <p>לא בונים שוב בזמן הקידום: בנייה חדשה עלולה להפיק תוכן אחר. מעתיקים את ה־manifest והשכבות, בודקים שה־Digest ביעד זהה, ורק אז פורסים. הייצור מוריד מהמאגר שלו ומחזיק גם את הגרסה הקודמת, ולכן פעולתו ושחזורו אינם תלויים בזמינות סביבת הבדיקות.</p>
+        <h3>מה עוד חייב להיות בחבילה ובתהליך הבנייה?</h3><ul><li>התקנת תלויות דרך <code>npm ci</code> עם קובץ הנעילה שב־Git.</li><li>סריקת תלויות ותמונת הריצה; <bdi>SBOM</bdi> שהוא רשימת רכיבים; ותיעוד מקור הבנייה (<bdi>provenance</bdi>).</li><li>קיבוע תמונות הבסיס לפי Digest, ועדכון מבוקר שלהן.</li><li>קובץ <code>version.json</code> עם מזהה ה־commit והרצת ה־CI, ותוויות תמונה שמציינות מקור וגרסה.</li><li>תמונת ריצה מצומצמת: ללא קוד פרטי, סודות, כלי בדיקה או נתוני לקוחות. Node משמש לבנייה ואינו נדרש להגשת קבצי האתר בשרת Nginx.</li><li>ריצה ללא root, מגבלות משאבים, הסרת יכולות לא נחוצות, ומערכת קבצים לקריאה בלבד עם תיקיות זמניות מוגדרות.</li><li>שמירת תמונת הגרסה הקודמת מקומית ובמאגר, תוך החרגתה מניקוי.</li></ul>
+        <details><summary>למה חשוב לבדוק קבצים, קישורים ומטמון?</summary><div class="table-wrap"><table><thead><tr><th>נתיב</th><th>התנהגות רצויה</th></tr></thead><tbody><tr><td><code>/results</code>, <code>/import</code>, <code>/guide</code>, <code>/meshes/:id</code></td><td>בפתיחה ישירה או רענון מקבלים את HTML של האפליקציה, כדי שהניווט בדפדפן יעבוד.</td></tr><tr><td><code>/assets/*</code></td><td>מקבלים JS, CSS וקובצי Worker אמיתיים, עם MIME נכון. שמות שכוללים hash מתאימים למטמון ארוך.</td></tr><tr><td><code>/sample/*</code></td><td>קובצי דוגמה נכונים; קבצים ללא גרסה דורשים אימות מחדש מול השרת.</td></tr><tr><td><code>/version.json</code></td><td>הגרסה הנוכחית, בלי מטמון ישן שמסתיר מה נפרס.</td></tr><tr><td><code>/readyz</code></td><td>מחזיר 200 רק כשהשרת מסוגל לקרוא את קבצי השחרור הדרושים.</td></tr><tr><td>JS או JSON שלא קיים</td><td>מחזיר 404 אמיתי. החזרת HTML במקום קובץ חסר עלולה להסתיר תקלה.</td></tr></tbody></table></div><p>בייצור מגישים את החבילה דרך שרת הווב. שרת הפיתוח ו־<code>vite preview</code> יכולים לשמש לפיתוח ולבדיקות CI, לא להגשה הציבורית בתכנית הזו.</p></details>
+        <div class="callout warn"><strong>גם לשונית פתוחה מלפני הפריסה צריכה להמשיך לעבוד.</strong><p>כל ייבוא יוצר Worker בדפדפן. לשונית ישנה יכולה לבקש שם Worker מהגרסה הקודמת. שומרים קבצים בעלי hash מגרסאות קודמות לחלון זמן מוגדר—למשל 10 גרסאות / 7 ימים לפי המדיניות—ובודקים ייבוא מלשונית ישנה עם מטמון מנוטרל. רענון אוטומטי עלול לאבד את הקבצים שהמשתמש כבר ייבא לזיכרון.</p></div>
+      </section>
+
+      <section class="chapter" id="pipelines" aria-labelledby="pipelines-title">
+        <div class="chapter-head"><span class="chapter-no">07</span><div><div class="eyebrow">שומרים על מסלול קבוע</div><h2 id="pipelines-title">מה עושה ה־CI/CD?</h2></div></div>
+        <p class="lead">Pipeline הוא סדר פעולות אוטומטי. כל שלב חייב לעבור לפני שהגרסה ממשיכה לשלב הבא.</p>
+        <div class="table-wrap wide"><table><thead><tr><th>שלב</th><th>מה בודקים או מבצעים?</th><th>מה מאפשר להמשיך?</th></tr></thead><tbody><tr><td>בקשת שינוי — PR</td><td>התקנה, סריקות, בדיקות יחידה, TypeScript, בנייה, בניית תמונה ובדיקות דפדפן.</td><td>כל הבדיקות הנדרשות עברו. אין פריסה ואין הרשאות ענן.</td></tr><tr><td>מיזוג מאושר ל־main</td><td>מפיקים ושומרים תמונה בדוקה, רשימת רכיבים ומזהה שחרור.</td><td>תוצאות הבדיקות משויכות לתמונה המסוימת.</td></tr><tr><td>Staging</td><td>מפעילים את הסביבה, פורסים לפי Digest ובודקים את האתר דרך השרת האמיתי.</td><td>קבצים ותרחישי משתמש תקינים.</td></tr><tr><td>קידום לייצור</td><td>מעתיקים את התמונה למאגר הייצור ומאמתים Digest.</td><td>סביבת GitHub מוגנת; אפשר להוסיף אישור אנושי לפי מדיניות הצוות.</td></tr><tr><td>פריסה לייצור</td><td>מכינים את המקום הלא־פעיל, בודקים, מעבירים תעבורה ובודקים HTTPS מבחוץ.</td><td>אם האימות נכשל, מחזירים את הגרסה הקודמת.</td></tr><tr><td>סיום</td><td>מתעדים את השחרור, עוקבים אחרי שגיאות ומכבים את Staging בהתאם לתזמון.</td><td>התראה על כישלון בפריסה, בשחזור או בניקוי.</td></tr></tbody></table></div>
+        <h3>בדיקות קיימות באפליקציה</h3><pre><code>npm ci
+npm audit --audit-level=high
+npm test
+npm run build
+npx playwright install --with-deps chromium</code></pre><p class="definition"><code>npm ci</code> מתקין לפי הנעילה; <code>audit</code> מחפש חולשות ידועות; <code>test</code> מריץ בדיקות יחידה; <code>build</code> בודק טיפוסים ובונה קבצי ייצור; התקנת Chromium מכינה את סביבת בדיקות הדפדפן.</p>
+        <p>בדיקות <bdi>Playwright</bdi> צריכות לפעול מול הבנייה או הקונטיינר שמועמד לייצור. התצורה הקיימת מתחילה בשרת פיתוח; התכנית מוסיפה תצורת CI עם <code>E2E_BASE_URL</code> שמאפשרת לכוון לכתובת הקונטיינר או ל־Staging. שומרים את אפשרויות ה־WebGL בתוכנה כדי לבדוק את הצופה גם בלי GPU ב־runner.</p>
+        <p>הכיסוי הנדרש: טעינת דוגמאות, פתיחת קישור ישיר ורענון, ייבוא ב־Worker, ציור STL, יצוא JSON מקורי ותצוגה בגדלי מסך שונים. כרגע אין סקריפט lint או סף coverage מוגדר; מוסיפים אותם אחרי הגדרת תצורה ובסיס מדידה. לא מסתירים כישלון באמצעות דילוג על בדיקות או ניסיונות חוזרים ללא הגבלה.</p>
+        <details><summary>Pipeline נפרד לשינויים בתשתית</summary><ul><li><code>terraform fmt -check -recursive</code> בודק עיצוב; <code>terraform validate</code> בודק תצורה אחרי אתחול הספקים. מוסיפים בדיקות מדיניות ועלות.</li><li>Plan עם הרשאות ענן מופעל רק עבור שינויים מהימנים. קוד ספקים ומקורות נתונים יכול להתבצע בזמן תכנון.</li><li>שומרים Plan של commit שנבדק; Apply בייצור משתמש באותו Plan. אם הקלט או המצב השתנו, יוצרים תכנית חדשה ובודקים אותה.</li><li>בדיקת Drift מתוזמנת בודקת אם המציאות בענן שונה מהתיאור בקוד. מדווחים על ההבדל; לא מתקנים אוטומטית ללא סקירה.</li><li>בפקודה <code>terraform plan -detailed-exitcode</code>: קוד 0 = אין שינוי, קוד 2 = נמצאו שינויים, קוד 1 = שגיאה.</li><li>מפרידים שינויי תשתית מפרסום תמונת אפליקציה. בהמשך מגדירים בעלים אחד לעדכון תבנית המכונות, כדי ש־Terraform ו־CI לא יבטלו זה את שינוייו של זה.</li></ul></details>
+        <div class="callout"><strong>מי מחבר את GitHub לענן?</strong><p>זהויות זמניות דרך <bdi>Workload Identity Federation</bdi>, עם הגבלות על המאגר, הבעלים, הענף, ה־workflow והסביבה. רק עבודות שצריכות ענן מקבלות <code>id-token: write</code>. נועלים Actions ל־commit שנבדק, שומרים דוחות, מגדירים זמן מרבי ומריצים פריסה אחת בכל פעם לסביבה. לא מבטלים פריסה באמצע החלפת תעבורה.</p></div>
+        <p class="mini">GitHub Actions מחויב בנפרד מ־GCP. אפשר לממש את אותו תהליך ב־Cloud Build אם רוצים שהרצות ה־CI יתבצעו ב־GCP; בוחרים Pipeline אחראי אחד לשחרור.</p>
+      </section>
+
+      <section class="chapter" id="rollback" aria-labelledby="rollback-title">
+        <div class="chapter-head"><span class="chapter-no">08</span><div><div class="eyebrow">תמיד יודעים מה פעיל</div><h2 id="rollback-title">Blue/Green וחזרה לגרסה קודמת</h2></div></div>
+        <p class="lead">הגרסה הישנה ממשיכה לשרת בזמן שהחדשה עולה ונבדקת. רק אחרי הצלחה מפנים אליה את התעבורה.</p>
+        <div class="simulator" id="release-simulator"><h3>הדמיית פריסה — נסו להעביר גרסה</h3><p class="definition">שתי גרסאות על אותה מכונה. הפעולות כאן משנות את התרשים בלבד.</p><div class="traffic" id="traffic-label">תעבורת המשתמשים → Blue · גרסה 1.1</div><div class="slots"><div class="slot active" data-color="blue" id="slot-blue"><div class="slot-title" dir="ltr">BLUE · localhost:8081</div><div class="slot-version" dir="ltr">v1.1</div><div class="slot-status" id="blue-status">פעילה ומשרתת משתמשים</div></div><div class="slot" data-color="green" id="slot-green"><div class="slot-title" dir="ltr">GREEN · localhost:8082</div><div class="slot-version" dir="ltr">v1.2</div><div class="slot-status" id="green-status">מועמדת; עדיין לא נבדקה</div></div></div><div class="sim-controls"><button type="button" class="button" id="validate-release">1. בודקים את גרסה 1.2</button><button type="button" class="button primary" id="promote-release" disabled>2. מעבירים תעבורה ל־1.2</button><button type="button" class="button danger" id="fail-release">מדמים תקלה</button><button type="button" class="button" id="rollback-release" disabled>חזרה יזומה ל־1.1</button><button type="button" class="button" id="reset-release">איפוס</button></div><p class="sim-message" id="sim-message" role="status" aria-live="polite">גרסה 1.1 משרתת את המשתמשים. קודם בודקים את המועמדת; עדיין אי אפשר להעביר אליה תעבורה.</p><div class="journal" id="release-journal">active=v1.1 | previous=retained | candidate=unchecked</div></div>
+        <h3>עשרת הצעדים של סקריפט הפריסה</h3><ol><li>נועלים את הפריסה כדי ששני תהליכים לא ישנו את המערכת במקביל; מאמתים Digest ומאגר מורשה.</li><li>שומרים מה פעיל: תמונה, slot, תצורת פרוקסי, commit וזמן. רושמים שהחלה פריסה.</li><li>מורידים את התמונה החדשה לפי Digest, בלי לעצור את הקונטיינר הפעיל.</li><li>מפעילים את המקום הלא־פעיל עם מגבלות משאבים ומדיניות הפעלה מחדש.</li><li>ממתינים למוכנות עם זמן מרבי ובודקים גרסה, קובצי דוגמה, JS/Worker, MIME וקישורים ישירים.</li><li>יוצרים תצורת פרוקסי זמנית ובודקים אותה עם <code>nginx -t</code>.</li><li>מחליפים את התצורה באופן אטומי ומבצעים reload הדרגתי ל־Nginx.</li><li>בודקים מבחוץ את הכתובת הציבורית, TLS, מזהה הגרסה ותרחיש בדפדפן.</li><li>בכישלון משחזרים את התצורה והתמונה הקודמות ומוודאים שהן עובדות. הפריסה עדיין מסומנת ככושלת גם אם השחזור הצליח.</li><li>בהצלחה מתעדים את הגרסה החדשה ומשאירים את הקודמת זמינה לשחזור; משחררים את הנעילה.</li></ol>
+        <div class="callout note"><strong>שתי הגנות שונות</strong><p>Rollback מחזיר גרסת תוכנה. הוא לא מתקן מכונה שנהרסה. לשם כך צריך להקים VM חדש מה־Terraform ומה־bootstrap, ואז להפעיל את התמונה השמורה. שתי יכולות אלו נבדקות בנפרד.</p></div>
+        <div class="table-wrap wide"><table><thead><tr><th>תרחיש</th><th>התגובה</th><th>יעד לבדיקה</th></tr></thead><tbody><tr><td>מועמדת שבורה לפני ההחלפה</td><td>עוצרים אותה; הישנה ממשיכה לשרת.</td><td>לא נשלחה תעבורה לגרסה השבורה.</td></tr><tr><td>כישלון אחרי ההחלפה</td><td>מחזירים את הפרוקסי לגרסה השמורה ומאמתים.</td><td>Rollback בפחות מ־5 דקות.</td></tr><tr><td>CI מתנתק באמצע</td><td>תהליך המארח ויומן השחרור משלימים או משחזרים פעולה.</td><td>תמיד יודעים מה פעיל.</td></tr><tr><td>אתחול המארח</td><td>Systemd מפעיל את הפרוקסי והגרסה שנרשמה.</td><td>התאוששות במעבדה בתוך 10 דקות.</td></tr><tr><td>אובדן המארח</td><td>מקימים מחדש מתשתית כקוד ומפעילים Digest שמור.</td><td>מודדים זמן; יעד ראשוני עד 30 דקות.</td></tr><tr><td>עצירת Spot של Staging</td><td>מקימים את הבדיקות מחדש ופורסים את המועמדת.</td><td>הייצור העצמאי נשאר פעיל.</td></tr></tbody></table></div>
+        <p>Workflow השחזור מוגן ומקבל Digest קודם שאושר. לא בונים מחדש קוד ישן בזמן חירום. שומרים תמונות וראיות מחוץ למכונת האתר; מתעדים שחזור תעודות ותצורה ולא שומרים מפתחות TLS בתוך State.</p>
+        <p class="mini">Reload הדרגתי עוזר לרוקן חיבורים ישנים, אך דורש בדיקת רציפות אמיתית. גם מדיניות restart של Docker אינה מבטיחה שקונטיינר המסומן unhealthy יופעל מחדש; נדרשת מדיניות supervisor/watchdog מפורשת והתראה על לולאות אתחול.</p>
+      </section>
+
+      <section class="chapter" id="monitoring" aria-labelledby="monitoring-title">
+        <div class="chapter-head"><span class="chapter-no">09</span><div><div class="eyebrow">רואים תקלה גם כשהמכונה לא זמינה</div><h2 id="monitoring-title">איך יודעים שהמערכת עובדת?</h2></div></div>
+        <div class="grid three"><article class="card"><div class="card-index">CLOUD LOGGING</div><h3>מה קרה?</h3><p>לוגים מתעדים בקשות, שגיאות ופריסות: זמן, סטטוס, סביבה וגרסה.</p></article><article class="card"><div class="card-index">CLOUD MONITORING</div><h3>מה מצב המערכת?</h3><p>מדדים וגרפים מציגים זמינות, עומס, זיכרון, דיסק וזמני תגובה.</p></article><article class="card"><div class="card-index">OPS AGENT</div><h3>מי אוסף מהמכונה?</h3><p>Agent שמותקן על ה־VM ושולח מדדים ולוגים לפרויקט של הסביבה.</p></article></div>
+        <p>יוצרים את לוחות הבקרה, ההתראות וערוצי הדיווח כחלק מקוד התשתית. מגדירים סינון לפי סביבה כדי שכיבוי Staging מתוכנן לא יפעיל התראת ייצור. מדידה מרחוק מאפשרת לזהות נפילה גם כשהמכונה עצמה אינה זמינה.</p>
+        <div class="table-wrap wide"><table><thead><tr><th>מה מודדים?</th><th>נקודת התחלה בתכנית</th><th>מה עושים?</th></tr></thead><tbody><tr><td>זמינות מבחוץ</td><td>HTTPS בכל דקה מ־3 מיקומים לפחות; מצב ותוכן צפוי. מתריעים אחרי כשלים חוזרים ב־2 מיקומים.</td><td>בודקים שרת, DNS, תעודה והגרסה האחרונה.</td></tr><tr><td>נכונות שחרור</td><td><code>version.json</code> תואם ל־commit של התמונה; הדוגמה נטענת.</td><td>עוצרים פריסה או חוקרים סטייה.</td></tr><tr><td>שגיאות שרת</td><td>יותר מ־2% שגיאות 5xx במשך 5 דקות, מעל סף מינימום בקשות.</td><td>מקשרים ללוגים ולפריסה, ושוקלים שחזור.</td></tr><tr><td>זמן תגובה</td><td>p95 מעל קו הבסיס שנמדד למשך 10 דקות.</td><td>בודקים משאבים, תעבורה וקיבולת.</td></tr><tr><td>CPU וזיכרון</td><td>CPU מעל 80% או זיכרון מעל 85% ל־10 דקות.</td><td>בודקים עומס, דליפה או שינוי גודל.</td></tr><tr><td>דיסק</td><td>מעל 80% שימוש או צפי להתמלאות.</td><td>מנקים לוגים ושכבות ישנות לפי מדיניות.</td></tr><tr><td>תהליך ו־Agent</td><td>לולאת אתחול, מדדים חסרים או פרוקסי שנעצר.</td><td>משחזרים וחוקרים את הסיבה.</td></tr><tr><td>עלות ותוקף</td><td>חריגה צפויה מתקציב; התקרבות לפקיעת תעודה או ניסיון.</td><td>מכבים רכיבים אופציונליים ומתכננים המשך.</td></tr></tbody></table></div>
+        <h3>מה ההבדל בין בדיקת בריאות לבדיקת משתמש?</h3><p><code>/readyz</code> יכול להוכיח שהשרת מגיש קבצים. הוא לא מוכיח שה־WebGL פועל, שייבוא הקובץ הצליח או שיצוא JSON תקין. לכן מפעילים גם תרחיש דפדפן בכל שחרור ובתדירות מתאימה בזמן שהייצור פעיל.</p>
+        <div class="callout"><strong>יעדים שצריך למדוד, לא הבטחות שכבר הושגו</strong><p>יעד התחלתי: 99.9% זמינות חודשית של ה־UI, גילוי תקלה בתוך 5 דקות ושחזור גרסה בתוך 5 דקות מתחילת פעולת השחזור. זמינות 99.9% משאירה כ־43 דקות אי־זמינות בחודש של 30 יום. שומרים תוצאות מדידה של שחרורים, שיעור כשלים וזמן התאוששות. שגיאת גיאומטריה בדפדפן נמדדת בנפרד משגיאת הגשת אתר.</p></div>
+        <details><summary>איך שולטים בעלויות הניטור ובתוכן הלוגים?</summary><p>מתחילים בשירותי הניטור המנוהלים, עם סבב מחיקת לוגים מקומי ומדיניות קליטה ושמירה בענן. לא רושמים סודות, שמות קבצים פרטיים או תוכן גיאומטריה של משתמשים. Grafana ו־Prometheus הם אפשרות מאוחרת אם רוצים להדגים גם אותם.</p><p>במסמך המקור מוזכרות מכסות ללא עלות: 50 GiB לוגים רגילים לפרויקט בחודש, 150 MiB למדדים זכאים המחויבים לפי קליטה לכל חשבון בחודש, מדדי GCP מסוימים ללא חיוב ומיליון הרצות Uptime לפרויקט בחודש. לדוגמה, 3 מיקומים × 2 בדיקות × פעם בדקה × 30 יום הם 259,200 הרצות.</p><p>לבדיקות דפדפן סינתטיות ולסוגי ניטור אחרים יש תמחור אחר. לפני הפעלה בודקים את המחיר העדכני, כולל תמחור ההתראות, ב־<a href="https://cloud.google.com/products/observability/pricing" target="_blank" rel="noopener noreferrer">מחירון Observability</a>.</p></details>
+      </section>
+
+      <section class="chapter" id="availability" aria-labelledby="availability-title">
+        <div class="chapter-head"><span class="chapter-no">10</span><div><div class="eyebrow">גדלים כשיש צורך ותקציב</div><h2 id="availability-title">ממכונה אחת לזמינות גבוהה</h2></div></div>
+        <p class="lead">כדי להתמודד עם נפילת מכונה, צריך מכונה נוספת שמסוגלת להמשיך לשרת. כדי להתמודד עם כשל ב־Zone, מפזרים את המכונות בין Zones שונים.</p>
+        <figure class="ha-figure" aria-label="מאזן עומסים מעביר בקשות לשתי מכונות בשני אזורי זמינות באותו Region"><div class="lb">משתמשים → HTTPS Load Balancer → מכונה בריאה</div><div class="zone-grid"><div class="zone"><bdi>Zone A · אותו Region</bdi><span>VM רגילה · גרסה מאושרת</span></div><div class="zone"><bdi>Zone B · אותו Region</bdi><span>VM רגילה · אותה גרסה</span></div></div><figcaption class="figure-caption">Regional MIG יוצר ומתחזק את המכונות. כל מכונה מתוכננת לעמוד לבדה בעומס הרגיל הצפוי.</figcaption></figure>
+        <div class="table-wrap"><table><thead><tr><th>רכיב</th><th>תפקיד</th></tr></thead><tbody><tr><td><bdi>Regional MIG</bdi></td><td>קבוצת מכונות מנוהלת שמפוזרת בין שני Zones נבחרים. מטפלת ביצירה ובהחלפה לפי תבנית.</td></tr><tr><td><bdi>Instance Template</bdi></td><td>תיאור קבוע של המכונה, מערכת ההפעלה, bootstrap ותמונת האפליקציה המדויקת.</td></tr><tr><td><bdi>Load Balancer</bdi></td><td>כתובת HTTPS אחת שמפנה למכונות בריאות. כולל תעודת TLS מנוהלת בתכנון הזה.</td></tr><tr><td><bdi>Health Checks</bdi></td><td>קובעים אם יש לשלוח בקשות למכונה. Autohealing נפרד מחליט מתי להחליף אותה.</td></tr><tr><td>גבולות קיבולת</td><td>מספר מכונות מרבי, תקציב ויכולת של מכונה אחת לשאת את העומס בזמן תקלה.</td></tr></tbody></table></div>
+        <p>אם אחת משתי המכונות נופלת, נשארת חצי מהקיבולת שהוקצתה. לכן בודקים מראש שהמכונה שנשארה מסוגלת להתמודד עם העומס. שתי מכונות באותו Region אינן מגינות מפני תקלה של Region שלם.</p>
+        <h3>איך מעדכנים בלי לכבות את כל הקבוצה?</h3><p>מעדכנים בהדרגה. <code>maxUnavailable = 0</code> אומר שלא מוציאים מכונה פעילה כחלק מהעדכון לפני שיש קיבולת חלופית מוכנה. בקבוצה אזורית בשני Zones, דוגמת התכנית היא <code>maxSurge = 2</code>: מאפשרים זמנית עוד שתי מכונות. ערך Surge קבוע וחיובי צריך להתאים למספר ה־Zones בהתאם לכללי השירות.</p>
+        <p>בודקים מכסת ייצור גם לשיא הזמני, לא רק לשתי המכונות הרגילות. עלויות הבדיקות והפרויקטים האחרים עדיין יורדות מאותו חשבון חיוב אם הוא משותף. בוחרים גורם אחד שאחראי להצביע לתבנית הפעילה—Terraform או תהליך שחרור שהוגדר במפורש.</p>
+        <div class="callout warn"><strong>Autohealing אינו Rollback.</strong><p>אם התבנית עצמה מפעילה אפליקציה שבורה, יצירת מכונה חדשה מאותה תבנית יכולה לשחזר את אותה תקלה. כדי לחזור לגרסה קודמת בוחרים תבנית קודמת עם Digest מאושר, ומבצעים עדכון הדרגתי מבוקר.</p></div>
+        <details><summary>רשת, גישת אינטרנט ואתחול מכונות</summary><p>הכניסה למכונות הייצור מותרת רק ממקורות מאזן העומסים ובדיקות הבריאות המתאימים, וניהול מתבצע דרך IAP. משתמשים בכללי חומת אש וזהויות של התשתית החדשה.</p><p>בפרופיל הניסיון הפשוט אפשר להשאיר כתובות חיצוניות לצורך גישה החוצה לחבילות ולתמונות, עם כניסה מוגבלת בחומת האש. בהמשך מסירים אותן ומשתמשים ב־Private Google Access לשירותי Google נתמכים ובתמונות מערכת שהוכנו מראש, או בנתיב יציאה מתוקצב. סקריפט שצריך <code>apt</code> או מאגר ציבורי לא יעבוד אם מסירים ממנו אינטרנט בלי חלופה.</p></details>
+        <h3>תרגיל HA שאפשר להציג</h3><ol><li>מתחילים בדיקות רציפות ובדיקת עומס מוגבלת ורושמים קו בסיס.</li><li>מסירים או עוצרים מכונה מנוהלת בסביבת התרגיל.</li><li>מוודאים שהמאזן מפנה למכונה הבריאה ושקבוצת המכונות מחליפה את המכונה החסרה.</li><li>מודדים בקשות שנכשלו, זמן התאוששות וקיבולת של המכונה שנותרה.</li><li>מפרסמים מועמדת לא תקינה ומוודאים דחייה או שחזור; לאחר מכן בודקים שחרור תקין.</li><li>מסירים את התשתית הזמנית, מחפשים IP, דיסקים ומאזן שנשארו, ומתעדים עלות.</li></ol>
+        <p class="mini">עצירת תהליך מוכיחה התמודדות עם כשל תהליך. הסרת VM מוכיחה כשל מכונה. כדי לטעון להגנה מכשל Zone צריך תרגיל ממוקד Zone וראיות מתאימות. אפשר להוסיף בהמשך CDN, כמה Regions, תורים או Kubernetes לפי מדידות ודרישות התאוששות.</p>
+      </section>
+
+      <section class="chapter" id="portfolio" aria-labelledby="portfolio-title">
+        <div class="chapter-head"><span class="chapter-no">11</span><div><div class="eyebrow">משאירים ראיות, לא רק תרשים</div><h2 id="portfolio-title">סדר העבודה ומה מציגים בסוף</h2></div></div>
+        <div class="table-wrap wide"><table><thead><tr><th>יכולת DevOps</th><th>מה שומרים כהוכחה?</th></tr></thead><tbody><tr><td>תשתית כקוד</td><td>Plan שנבדק והקמה חוזרת של Staging, עם בעלות ברורה על State.</td></tr><tr><td>איכות CI</td><td>PR שנחסם בגלל בדיקה; דוחות יחידה ודפדפן; סריקת תמונה ו־SBOM.</td></tr><tr><td>קידום בין סביבות</td><td>אותו Digest ב־Staging ובמאגר הייצור.</td></tr><tr><td>פריסה ושחזור</td><td>גרסה שבורה שלא מקבלת תעבורה, שחרור מוצלח ומדידת זמן Rollback.</td></tr><tr><td>תפעול וניטור</td><td>Dashboard, התראה שהגיעה, לוגים תואמים והודעת התאוששות.</td></tr><tr><td>אבטחה והפרדה</td><td>מטריצת הרשאות, אמון CI מוגבל, State מוגן ותכניות שרלוונטיות רק לפרויקטים החדשים.</td></tr><tr><td>עלות וזמינות</td><td>הנחות תקציב, הוצאות בפועל, תזמון Staging, ניקוי ותוצאות תרגיל כשל עם גבולות היכולת.</td></tr><tr><td>יכולת העברה לאדם נוסף</td><td>Runbook קצר, תיאור תקלה ומה עבד בשחזור.</td></tr></tbody></table></div>
+        <h3>רשימת יישום שאפשר לסמן</h3><p class="definition">הסימונים נשמרים בדפדפן הזה כאשר האחסון המקומי זמין. הם עזר לימודי ואינם מאמתים מצב בענן.</p>
+        <div class="check-progress"><progress id="check-progress" value="0" max="13" aria-label="התקדמות ברשימת היישום"></progress><span id="check-count">0 מתוך 13</span></div>
+        <ul class="checklist" id="implementation-checklist"><li><label><input type="checkbox" data-check="projects"><span>לבחור מזהי פרויקטים חדשים, Region, Zones וגודל מכונות.</span></label></li><li><label><input type="checkbox" data-check="budget"><span>לרשום יתרת ניסיון, תאריך סיום והוצאות יומיות של כלל הפרויקטים בחשבון.</span></label></li><li><label><input type="checkbox" data-check="state"><span>להקים פרויקטים, אחסון State פרטי ו־Terraform עצמאי לכל סביבה.</span></label></li><li><label><input type="checkbox" data-check="isolation"><span>לבדוק ש־Plans וזהויות CI מתייחסים רק לתשתית האפליקציה החדשה.</span></label></li><li><label><input type="checkbox" data-check="agent"><span>להגדיר הרשאות, Ops Agent וניטור; לבדוק שהתראה מגיעה מקצה לקצה.</span></label></li><li><label><input type="checkbox" data-check="image"><span>להכין תמונה, מאגרים, מזהה שחרור ותצורת שרת ייצור.</span></label></li><li><label><input type="checkbox" data-check="ci"><span>להריץ ב־CI בדיקות מול הקונטיינר האמיתי.</span></label></li><li><label><input type="checkbox" data-check="release"><span>לממש Staging, נעילה, יומן פריסה, Blue/Green ו־Rollback.</span></label></li><li><label><input type="checkbox" data-check="hosts"><span>להקים מכונות Staging וייצור חדשות, עם רשתות, מאגרים וזהויות נפרדים.</span></label></li><li><label><input type="checkbox" data-check="promotion"><span>להפעיל קידום מוגן, בדיקות HTTPS מבחוץ ומדיניות שמירת גרסאות.</span></label></li><li><label><input type="checkbox" data-check="drill"><span>למדוד שחזור גרסה והקמה מחדש של מארח.</span></label></li><li><label><input type="checkbox" data-check="ha"><span>להריץ תרגיל HA רק אחרי בדיקת מכסה בשיא ועלות צפויה.</span></label></li><li><label><input type="checkbox" data-check="evidence"><span>לתעד תוצאות, לנקות משאבים זמניים ולהחליט מה נשאר אחרי הניסיון.</span></label></li></ul>
+        <button class="button no-print" type="button" id="reset-checklist">ניקוי הסימונים</button>
+        <div class="callout note"><strong>מה כבר נבדק ומה עדיין תכנון?</strong><p>בסקירת התיעוד המקורית עברו 24 בדיקות יחידה ובניית הייצור. זה אינו אישור שהענן נפרס: יצירת הפרויקטים, IAM, תמונת Docker, ניטור, שחרור, שחזור ו־HA דורשים מימוש ואימות בפועל. ההדמיות בקובץ הזה מדגימות את העיקרון בלבד.</p></div>
+      </section>
+
+      <section class="chapter" id="glossary" aria-labelledby="glossary-title">
+        <div class="chapter-head"><span class="chapter-no">א–ת</span><div><div class="eyebrow">חוזרים למושג שנתקעתם בו</div><h2 id="glossary-title">מילון מונחים קצר</h2></div></div>
+        <label for="glossary-search" class="small">חיפוש מושג בעברית או באנגלית</label><input class="glossary-search" id="glossary-search" type="search" placeholder="למשל: Digest, שחזור, הרשאות…" autocomplete="off"><p id="glossary-count" class="mini" aria-live="polite"></p>
+        <dl class="glossary" id="glossary-list">
+          <div class="term"><dt><bdi>GCP / Google Cloud</bdi></dt><dd>שירותי הענן של Google: מכונות, רשתות, אחסון, הרשאות וניטור.</dd></div>
+          <div class="term"><dt><bdi>Project</bdi> · פרויקט</dt><dd>גבול ארגוני למשאבים ולהרשאות. כמה פרויקטים יכולים להשתמש באותו חשבון חיוב.</dd></div>
+          <div class="term"><dt><bdi>Billing Account</bdi> · חשבון חיוב</dt><dd>המסגרת שמממנת פרויקטים. אשראי הניסיון נצרך במשותף על ידי הפרויקטים שמחויבים אליו.</dd></div>
+          <div class="term"><dt><bdi>VM / Compute Engine</bdi></dt><dd>מכונה וירטואלית בענן שמריצה מערכת הפעלה, פרוקסי וקונטיינרים.</dd></div>
+          <div class="term"><dt><bdi>Region / Zone</bdi></dt><dd>Region הוא אזור גאוגרפי של הענן; Zone הוא אזור פריסה בתוך אותו Region. מפזרים מכונות בין Zones כדי לצמצם תלות בכשל מקומי.</dd></div>
+          <div class="term"><dt><bdi>VPC / Subnet</bdi></dt><dd>רשת וירטואלית ותת־רשת שמגדירות את גבולות התקשורת וכתובות הרשת של המשאבים.</dd></div>
+          <div class="term"><dt><bdi>Firewall</bdi> · חומת אש</dt><dd>כללים שקובעים אילו מקורות ופורטים מורשים לתקשר עם המכונות.</dd></div>
+          <div class="term"><dt><bdi>Dev / Staging / Production</bdi></dt><dd>פיתוח מקומי, סביבת בדיקה לפני פרסום, והסביבה שמשרתת משתמשים אמיתיים.</dd></div>
+          <div class="term"><dt><bdi>Container / Image</bdi></dt><dd>Image היא חבילת התוכנה; Container הוא מופע רץ של אותה חבילה על המארח.</dd></div>
+          <div class="term"><dt><bdi>Artifact Registry / Repository</bdi></dt><dd>שירות ומאגר לאחסון חבילות ריצה. בתכנית הזו מדובר בתמונות קונטיינר, לא במאגר קוד המקור ב־GitHub.</dd></div>
+          <div class="term"><dt><bdi>OCI / Manifest / Layers</bdi></dt><dd>תקן תמונה, התיאור שמפנה לתצורה ולשכבות, ושכבות הקבצים שמרכיבות את חבילת הריצה.</dd></div>
+          <div class="term"><dt><bdi>Digest</bdi></dt><dd>טביעת אצבע של תוכן שמאפשרת לזהות במדויק את התמונה שנבדקה ולהשוות את ההעתק שלה.</dd></div>
+          <div class="term"><dt><bdi>Tag</bdi></dt><dd>תווית נוחה לתמונה, למשל 1.2. תוויות יכולות להשתנות; לכן התכנית מזהה פריסה במדויק באמצעות Digest.</dd></div>
+          <div class="term"><dt><bdi>Promotion</bdi> · קידום</dt><dd>העברת החבילה המאושרת מסביבת הבדיקות למאגר הייצור, תוך אימות שלא השתנתה.</dd></div>
+          <div class="term"><dt><bdi>Blue/Green</bdi></dt><dd>שני מקומות לגרסאות בתוך סביבה אחת: אחד פעיל ואחד מועמד. מעבירים ביניהם את התעבורה.</dd></div>
+          <div class="term"><dt><bdi>Rollback</bdi> · שחזור גרסה</dt><dd>חזרה לגרסה קודמת שנשמרה ואושרה, בלי לבנות אותה מחדש בזמן התקלה.</dd></div>
+          <div class="term"><dt><bdi>CI/CD / Pipeline</bdi></dt><dd>סדר פעולות אוטומטי של בדיקות, בנייה ופריסה. שלבים כושלים חוסמים את המשך השחרור.</dd></div>
+          <div class="term"><dt><bdi>PR / Commit / main</bdi></dt><dd>בקשת שינוי, נקודת גרסה בהיסטוריית Git, והענף המרכזי שממנו משחררים שינויים מאושרים.</dd></div>
+          <div class="term"><dt><bdi>Runner</bdi></dt><dd>המחשב שמריץ את עבודות ה־CI. הבדיקות ובניית התמונה מתבצעות עליו, מחוץ למכונת הייצור.</dd></div>
+          <div class="term"><dt><bdi>Terraform / IaC</bdi></dt><dd>כלי ותהליך לתיאור תשתית בקוד, תכנון שינויים וביצועם באופן שניתן לסקירה ושחזור.</dd></div>
+          <div class="term"><dt><bdi>State / Backend</bdi></dt><dd>הרישום של המשאבים ש־Terraform מנהל, והמקום שבו נשמר הרישום. בתכנית נשמר באחסון פרטי עם נעילה.</dd></div>
+          <div class="term"><dt><bdi>Plan / Apply / Drift</bdi></dt><dd>תכנון ההבדל, ביצוע התכנית, וסטייה בין המצב בענן ובין התיאור שמנוהל בקוד.</dd></div>
+          <div class="term"><dt><bdi>Bootstrap</bdi></dt><dd>הקמה ראשונית. בהקמת פרויקט: זהויות ומצב; באתחול VM: התקנה והגדרה הדרושות כדי שיוכל לשרת.</dd></div>
+          <div class="term"><dt><bdi>IAM / Service Account</bdi></dt><dd>מערכת ההרשאות וזהות של תוכנה. נותנים לכל רכיב רק את הגישה שנדרשת לתפקידו.</dd></div>
+          <div class="term"><dt><bdi>Workload Identity Federation</bdi></dt><dd>אמון בזהות של עבודת CI, שמאפשר לקבל הרשאות קצרות־חיים בענן לפי תנאים מוגדרים.</dd></div>
+          <div class="term"><dt><bdi>IAP / OS Login</bdi></dt><dd>גישה מזוהה ומבוקרת למכונה, עם מנהרה וכללי התחברות המבוססים על זהויות Google Cloud.</dd></div>
+          <div class="term"><dt><bdi>Nginx / Reverse Proxy</bdi></dt><dd>שרת ווב שיכול גם לקבל בקשות מבחוץ ולהעבירן לקונטיינר הפעיל מאחוריו.</dd></div>
+          <div class="term"><dt><bdi>HTTPS / TLS</bdi></dt><dd>תקשורת מוצפנת לאתר, עם תעודה שמאפשרת לדפדפן לבדוק את זהות הדומיין.</dd></div>
+          <div class="term"><dt><bdi>Web Worker / WebGL</bdi></dt><dd>עבודה ברקע בדפדפן, ורכיב לציור תלת־ממדי בדפדפן. אין לבלבל Worker כזה עם VM בענן.</dd></div>
+          <div class="term"><dt><bdi>SBOM / Provenance</bdi></dt><dd>רשימת רכיבי החבילה ותיעוד מקור הבנייה שלה: מה נבנה, מאיזה קוד ובאיזה תהליך.</dd></div>
+          <div class="term"><dt><bdi>Logs / Metrics / Alerts</bdi></dt><dd>תיעוד אירועים, מדידות מספריות לאורך זמן, והודעה שנשלחת כאשר תנאי תקלה מתקיים.</dd></div>
+          <div class="term"><dt><bdi>p95 / 5xx</bdi></dt><dd>p95 הוא זמן ש־95% מהבקשות מהירות ממנו או שוות לו; 5xx הן תגובות שמצביעות על שגיאות שרת.</dd></div>
+          <div class="term"><dt><bdi>Health Check / Readiness</bdi></dt><dd>בדיקה אם רכיב מגיב ומוכן לקבל בקשות. היא אינה מחליפה תרחיש משתמש מלא בדפדפן.</dd></div>
+          <div class="term"><dt><bdi>HA / Load Balancer</bdi></dt><dd>זמינות גבוהה באמצעות רכיבים חלופיים; מאזן עומסים מפנה בקשות למכונות בריאות.</dd></div>
+          <div class="term"><dt><bdi>MIG / Instance Template</bdi></dt><dd>קבוצה שמנהלת מכונות לפי תבנית קבועה. מאפשרת יצירה, החלפה ועדכון הדרגתי.</dd></div>
+          <div class="term"><dt><bdi>Autohealing</bdi></dt><dd>החלפת מכונה לא בריאה. אינה בוחרת לבד גרסת אפליקציה קודמת כאשר התבנית עצמה שבורה.</dd></div>
+          <div class="term"><dt><bdi>maxSurge / maxUnavailable</bdi></dt><dd>כמה מכונות נוספות מותר להקים זמנית וכמה מכונות מותר להוציא משירות במהלך עדכון.</dd></div>
+          <div class="term"><dt><bdi>Spot / Standard</bdi></dt><dd>Spot עשוי להיות מופסק כשהקיבולת נדרשת לספק; Standard הוא בסיס הייצור בתכנית. גם VM רגיל אחד אינו מספק HA.</dd></div>
+          <div class="term"><dt><bdi>SLO / SLA</bdi></dt><dd>SLO הוא יעד שירות שמגדירים ומודדים; SLA הוא הסכם שירות בעל תנאים. יעד במדריך אינו התחייבות שכבר הושגה.</dd></div>
+          <div class="term"><dt><bdi>Runbook</bdi></dt><dd>הוראות תפעול קצרות שמאפשרות לאדם נוסף לזהות תקלה, לבצע שחזור ולוודא התאוששות.</dd></div>
+        </dl><p id="glossary-empty" class="empty-state" hidden>לא נמצאו מושגים תואמים. נסו מילה קצרה יותר או חיפוש באנגלית.</p>
+      </section>
+
+      <section class="chapter" id="references" aria-labelledby="references-title">
+        <div class="chapter-head"><span class="chapter-no">↗</span><div><div class="eyebrow">למי שרוצה לחבר בין ההסבר לקוד</div><h2 id="references-title">דוגמאות טכניות ומסמך המקור</h2></div></div>
+        <p>הדוגמאות הבאות נלקחו מה־Markdown שעליו מבוסס ההסבר. הן מפרטות רכיבים מוצעים ליישום, ואינן מפעילות שום דבר בקובץ הזה.</p>
+        <details><summary>הגדרת פרויקט וספקי שירות חדשים <bdi>(hcl)</bdi></summary><pre><code>provider &quot;google&quot; {
+  project = var.project_id # Only this environment&#x27;s new geometrydash-ui project.
+  region  = var.region
+}
+
+resource &quot;google_project_service&quot; &quot;apis&quot; {
+  project = var.project_id
+  for_each = toset([
+    &quot;compute.googleapis.com&quot;,
+    &quot;storage.googleapis.com&quot;,
+    &quot;iap.googleapis.com&quot;,
+    &quot;iam.googleapis.com&quot;,
+    &quot;iamcredentials.googleapis.com&quot;,
+    &quot;sts.googleapis.com&quot;,
+    &quot;artifactregistry.googleapis.com&quot;,
+    &quot;logging.googleapis.com&quot;,
+    &quot;monitoring.googleapis.com&quot;,
+  ])
+  service            = each.key
+  disable_on_destroy = false
+}</code></pre></details>
+        <details><summary>חשבון שירות לכתיבת לוגים ומדדים <bdi>(hcl)</bdi></summary><pre><code>resource &quot;google_service_account&quot; &quot;web&quot; {
+  project      = var.project_id
+  account_id   = &quot;geometrydash-ui-web&quot;
+  display_name = &quot;geometrydash-ui web runtime&quot;
+  depends_on   = [google_project_service.apis]
+}
+
+resource &quot;google_project_iam_member&quot; &quot;web_observability&quot; {
+  for_each = toset([
+    &quot;roles/logging.logWriter&quot;,
+    &quot;roles/monitoring.metricWriter&quot;,
+  ])
+  project = var.project_id
+  role    = each.key
+  member  = &quot;serviceAccount:${google_service_account.web.email}&quot;
+}</code></pre></details>
+        <details><summary>חיבור זהות למכונה החדשה <bdi>(hcl)</bdi></summary><pre><code># Inside this environment&#x27;s new google_compute_instance resource.
+service_account {
+  email  = google_service_account.web.email
+  scopes = [&quot;https://www.googleapis.com/auth/cloud-platform&quot;]
+}</code></pre></details>
+        <details><summary>פקודות בדיקה קיימות <bdi>(bash)</bdi></summary><pre><code>npm ci
+npm audit --audit-level=high
+npm test
+npm run build
+npx playwright install --with-deps chromium</code></pre></details>
+        <details><summary>תצורת Playwright לבדיקת בנייה וקונטיינר <bdi>(ts)</bdi></summary><pre><code>import { defineConfig } from &#x27;@playwright/test&#x27;;
+import base from &#x27;./playwright.config&#x27;;
+
+const target = process.env.E2E_BASE_URL;
+
+export default defineConfig({
+  ...base,
+  forbidOnly: true,
+  retries: 1,
+  workers: 1,
+  reporter: [[&#x27;list&#x27;], [&#x27;html&#x27;, { open: &#x27;never&#x27; }]],
+  use: {
+    ...base.use,
+    baseURL: target || &#x27;http://127.0.0.1:5174&#x27;,
+    trace: &#x27;retain-on-failure&#x27;,
+  },
+  webServer: target ? undefined : {
+    command: &#x27;npm run preview -- --host 127.0.0.1 --port 5174 --strictPort&#x27;,
+    url: &#x27;http://127.0.0.1:5174&#x27;,
+    reuseExistingServer: false,
+  },
+});</code></pre></details>
+        <h3 style="margin-top:28px">מקורות רשמיים להמשך קריאה</h3>
+        <ul class="source-list"><li><a href="https://docs.cloud.google.com/free/docs/free-cloud-features" target="_blank" rel="noopener noreferrer">תקופת הניסיון וה־Free Tier</a></li><li><a href="https://cloud.google.com/products/compute/pricing" target="_blank" rel="noopener noreferrer">מחירי Compute Engine</a></li><li><a href="https://cloud.google.com/vpc/network-pricing" target="_blank" rel="noopener noreferrer">מחירי כתובות IP ורשת</a></li><li><a href="https://cloud.google.com/load-balancing/pricing" target="_blank" rel="noopener noreferrer">מחירי Load Balancing</a></li><li><a href="https://cloud.google.com/products/observability/pricing" target="_blank" rel="noopener noreferrer">מחירי ניטור ולוגים</a></li><li><a href="https://developer.hashicorp.com/terraform/language/backend/gcs" target="_blank" rel="noopener noreferrer">אחסון Terraform State ב־GCS</a></li><li><a href="https://docs.cloud.google.com/monitoring/agent/ops-agent/authorization" target="_blank" rel="noopener noreferrer">הרשאות Ops Agent</a></li><li><a href="https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines" target="_blank" rel="noopener noreferrer">אימות זמני ל־CI/CD</a></li><li><a href="https://docs.cloud.google.com/compute/docs/instance-groups/regional-migs" target="_blank" rel="noopener noreferrer">קבוצת מכונות אזורית</a></li><li><a href="https://docs.cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups" target="_blank" rel="noopener noreferrer">עדכון הדרגתי של מכונות</a></li></ul>
+        <details id="source-original"><summary>מסמך המקור המלא באנגלית — GCP_DEPLOYMENT.md</summary><p>עותק של המסמך שעליו מבוסס ההסבר, לשם השוואה. נשמר בתוך ה־HTML ואינו דורש הורדה.</p><pre class="source-markdown" dir="ltr"><code># geometrydash-ui: independent GCP DevOps deployment plan
+
+&gt; **Current implementation:** production-only Terraform, GitHub Actions, monitoring and rollback are now in the repository. Follow [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) for setup. Dev/staging configuration is intentionally inactive; the multi-environment and HA sections below describe future expansion. No account resources have been provisioned by writing these files.
+
+**Purpose:** build a reproducible, observable deployment that demonstrates practical DevOps engineering, fits a controlled trial budget, and can grow into a highly available service.
+
+**Reviewed:** 2026-10-15. This is an implementation specification, not an applied deployment. geometrydash-ui receives its own infrastructure. The supplied `meshseg-worker` Terraform belongs to an unrelated project and is background context only.
+
+## 1. Recommended approach
+
+Create dedicated Google Cloud projects for **geometrydash-ui nonproduction** and **geometrydash-ui production**. Provision new resources within them. Package the UI as a small, immutable container and promote the tested image through staging and production, with monitoring and a tested rollback procedure.
+
+Implement in three steps:
+
+1. **Create a new nonproduction VM to prove the delivery process.** Add monitoring, deploy a staging UI, and demonstrate a failed deployment and rollback. Develop locally.
+2. **Create a small standard production VM in the dedicated production project.** Give it its own network, identities, registry, Terraform state, and domain. Run staging only when needed. This is the recommended everyday trial setup.
+3. **Create a two-zone HA profile for resilience demonstrations or sustained production.** Put a regional managed instance group behind an HTTPS load balancer. Keep it running only when the remaining credit and quotas support it.
+
+The useful demonstration is that you can recreate the system, explain its cost, detect failure, recover, and scale it predictably. A single-host setup can demonstrate release engineering; it cannot survive loss of that host.
+
+## 2. Resource ownership and isolation
+
+The other project&#x27;s VM, bucket, network, service accounts, startup script, and Terraform state stay outside this application&#x27;s deployment. Do not import them, deploy onto them, or grant the new application access to them.
+
+| Boundary | geometrydash-ui design |
+| --- | --- |
+| Projects | New `geometrydash-ui-nonprod-UNIQUE` and `geometrydash-ui-prod-UNIQUE` projects; names are examples |
+| Compute | New staging VM and new production VM/MIG; no use of `meshseg-worker` |
+| Networking | A new custom VPC, subnet, firewall rules, and IPs in each environment project |
+| Connectivity | No Shared VPC, peering, VPN, or other network link to the unrelated project |
+| Runtime identities | New service accounts scoped to this application&#x27;s environment resources |
+| CI access | New deployment identities and federation providers; no roles in the unrelated project |
+| Image registry | New Artifact Registry repository in each environment project |
+| Terraform | New root modules and independent, private state buckets in the new projects |
+| Monitoring | New dashboards, alerts, log collection, and notification configuration scoped to this application |
+| Storage | New private state/release storage as needed; no reuse of the other project&#x27;s data bucket |
+| Billing | The new projects may use the same trial billing account; this shares credit, not application infrastructure |
+
+The UI is static React/Vite/Three.js and reads imported geometry in a browser worker. It currently needs no server-side geometry processor, database, or geometry-data bucket. A future remote-processing feature would receive its own authenticated API and job resources within this application&#x27;s architecture.
+
+Use Debian 12, OS Login, IAP administration, Shielded VM settings, and dedicated runtime identities as design patterns when provisioning the new VMs. Keep their bootstrap configuration in this repository. Use **standard** production capacity; optional Spot staging can be interrupted and must be restartable. [Spot VM behavior](https://docs.cloud.google.com/compute/docs/instances/spot)
+
+## 3. Trial budget: what is realistic?
+
+The current trial provides **$300 of credit for 90 days**, subject to eligibility and product restrictions. Credits are shared by resources billed to that account; creating a staging project does not create another credit allocation. An unupgraded trial stops resources when credit or time expires. Upgrading retains unexpired credit but enables charges outside that credit. [Google Cloud trial](https://docs.cloud.google.com/free/docs/free-cloud-features)
+
+The trial also restricts quota increases. Check both steady-state capacity and temporary rollout capacity before choosing HA.
+
+### Deployment profiles
+
+| Profile | Resources | What it demonstrates | Availability boundary |
+| --- | --- | --- | --- |
+| A — initial lab | One new nonproduction VM in the new nonproduction project, with remote monitoring | CI, image promotion, blue/green switch, rollback | Lab only; one host and no independent production deployment |
+| B — recommended trial operation | One new standard production VM + one new on-demand staging VM, in separate new projects | Environment separation, repeatable deployment, secure identity, recovery | One production VM remains a single point of failure |
+| C — HA exercise / growth | Two new standard production VMs across two zones + global HTTPS load balancer; separate new staging VM | Load balancing, health checks, rolling updates, autohealing, failure drill | Handles an instance/zone failure at reduced capacity; not a whole-region outage |
+
+For profile B, an `e2-small` is a candidate for serving this static app; choose `e2-medium` if measured memory use from the OS, proxy, containers, and Ops Agent needs it. Build and run Chromium tests on CI runners, not the production VM. The browser performs geometry rendering. [E2 machine characteristics](https://docs.cloud.google.com/compute/docs/general-purpose-machines)
+
+### Example budget, with explicit assumptions
+
+These are **planning calculations, not a quote for your resources**. Assume Linux, low traffic, 730 running hours/month, no paid OS license, a hypothetical small-VM rate of **$0.02/hour**, and **$0.10/GiB-month** for the chosen disk. Replace these two inputs with the new projects&#x27; region-specific calculator values. [Compute pricing](https://cloud.google.com/products/compute/pricing), [disk pricing](https://cloud.google.com/compute/disks-image-pricing)
+
+| Cost item | Profile B example | Profile C example |
+| --- | ---: | ---: |
+| Production compute | 1 × 730 × $0.02 = $14.60 | 2 × 730 × $0.02 = $29.20 |
+| Production disks, 20 GiB each | $2.00 | $4.00 |
+| Production VM public IPv4, if retained for outbound access | $3.65 | $7.30 |
+| Global load-balancer forwarding rules | $0 | $18.25 |
+| Separate staging: 40 compute hours, 20 GiB disk, retained static IPv4 | ~$6.45 | ~$6.45 |
+| Planning allowance for modest logs, registry/state storage, DNS, transfer, and short rollout overlap | $10 | $10 |
+| **Illustrative geometrydash-ui monthly total** | **~$37** | **~$75** |
+| **Rough 3-month geometrydash-ui total** | **~$111** | **~$225** |
+
+These estimates cover this application&#x27;s new resources. If the unrelated project uses the same trial billing account, its charges also reduce the available credit; account for them in the billing-account runway without linking the deployments. Domain registration and GitHub runner overages are separate; the $10 allowance is not a usage cap. Traffic or log volume can exceed it.
+
+Public IPv4 attached to a standard VM is listed at $0.005/hour; a retained static address remains billable while its VM is stopped. Addresses detached from resources can cost more. The load-balancer figure uses $0.025/hour for the first five forwarding rules; processing and transfer are additional. [Network/IP pricing](https://cloud.google.com/vpc/network-pricing), [load-balancer pricing](https://cloud.google.com/load-balancing/pricing)
+
+A realistic runway calculation is:
+
+```text
+safe daily spend = (remaining trial credit - reserve) / days remaining
+
+new platform allowance per day
+  = safe daily spend - existing account spend per day
+
+Example:
+  $180 remaining, 60 days left, $36 reserve
+  safe daily spend = ($180 - $36) / 60 = $2.40
+  unrelated projects on the same billing account cost $1/day
+  new platform allowance = $1.40/day ≈ $42 per 30 days
+
+The ~$37 profile fits this example; the ~$75 profile does not.
+```
+
+Start with a 20% reserve. Use the last 7 days of actual account spend, not the VM&#x27;s sticker price. A short HA exercise can be affordable even when leaving HA running for the rest of the trial is not.
+
+### Cost controls to implement
+
+- Set an **alerts-only budget** across the billing account and per-environment budgets at 50%, 80%, and 100% thresholds. Budget alerts do not stop spending. [Budget behavior](https://docs.cloud.google.com/billing/docs/how-to/budgets)
+- Label resources with `app`, `environment`, `owner`, `managed_by`, and `cost_center`.
+- Schedule staging start/stop with an independent timeout or shutdown schedule; CI cancellation must not leave it running indefinitely.
+- Keep an explicit expiry for the HA exercise. Delete its load balancer and temporary resources when finished; stopping its VMs does not stop every charge.
+- Retain current and rollback image digests, then clean old registry versions. Start cleanup policies in dry-run mode. [Artifact cleanup](https://docs.cloud.google.com/artifact-registry/docs/repositories/cleanup-policy)
+- Check credit balance and expiry weekly, and before each HA exercise. Put a post-trial decision date on the calendar.
+- Do not count on the ongoing Free Tier to cover this architecture: its eligible VM, disk, and region limits differ from trial credit. Choose and cost the new disks explicitly; do not assume `pd-balanced` receives the standard-disk allowance.
+
+## 4. Environments and topology
+
+Use **dev, staging, and production** as separate lifecycle environments. Blue and green are two release slots inside one environment, not two production environments.
+
+| Environment | Purpose | Initial placement | Access / data |
+| --- | --- | --- | --- |
+| Dev | Interactive UI development and local tests | Local machine and isolated CI runners | Local fixture files |
+| Staging | Validate the exact production candidate | New scheduled VM in the new nonproduction project | IAP tunnel or authenticated HTTPS; sample data only |
+| Production | Stable viewer | New standard VM in the new production project; later regional MIG | Public HTTPS UI; dedicated runtime identity |
+
+Provision both projects independently from the unrelated project, with explicitly configured project IDs and provider aliases. Both may use the same trial billing account. If project quota prevents creating both immediately, start with the new nonproduction project and profile A, then add the production project when available. Keep project-specific monitoring scopes and IAM bindings within this application.
+
+Profile B:
+
+```mermaid
+flowchart LR
+    Git[GitHub PR and protected main] --&gt; CI[Checks and container build]
+    CI --&gt; NonprodAR[Nonproduction Artifact Registry]
+    NonprodAR --&gt; Stage[New staging VM: candidate validation]
+    Stage --&gt; Promotion[Protected digest promotion]
+    Promotion --&gt; ProdAR[Production Artifact Registry]
+    ProdAR --&gt; VM[New production standard VM]
+    Users[Users over HTTPS] --&gt; Proxy[Host TLS proxy]
+    Proxy --&gt; Blue[Blue container]
+    Proxy -. next release .-&gt; Green[Green container]
+    VM --- Proxy
+    VM --&gt; Ops[Cloud Logging and Monitoring]
+    Stage --&gt; NonprodOps[Nonproduction Logging and Monitoring]
+    Uptime[External uptime checks] --&gt; Proxy
+```
+
+Bind application slots to localhost, for example `127.0.0.1:8081` and `127.0.0.1:8082`. Only the host proxy exposes ports 80/443. Use a real domain and automated certificate renewal for public production. For private staging, test through IAP and perform separate public TLS checks after production promotion.
+
+Use isolated hosted CI runners; allow cloud deployment only from reviewed, trusted branches. The unrelated project&#x27;s VM is outside the CI and deployment architecture.
+
+## 5. Terraform for the new projects
+
+### Start with independent state and ownership
+
+Create new Terraform root modules for this application in this repository. The unrelated project&#x27;s Terraform/state, resource addresses, human SSH enrollment, and startup script are outside their scope.
+
+Before provisioning:
+
+1. Choose unique project IDs, region, staging zone, production zone(s), and resource names for geometrydash-ui.
+2. Create the new projects and attach the intended billing account using an authorized bootstrap identity.
+3. Create a private, versioned Terraform state bucket in each new project, then configure its GCS backend. Keep bootstrap state and recovery documented.
+4. Set the Google provider&#x27;s project explicitly in every root module. Restrict CI identities to these new projects.
+5. Review the plan: every resource must belong to this application, with no imports, data-source lookups, IAM grants, or networking references to the unrelated project.
+
+Keep state buckets separate from optional application/release storage. Runtime accounts receive no access to state. Pin Terraform/provider versions, commit `.terraform.lock.hcl`, and keep tfstate/plan files out of public artifacts. The GCS backend provides locking. [GCS state backend](https://developer.hashicorp.com/terraform/language/backend/gcs)
+
+### APIs
+
+Create API enablement resources in each new environment root:
+
+```hcl
+provider &quot;google&quot; {
+  project = var.project_id # Only this environment&#x27;s new geometrydash-ui project.
+  region  = var.region
+}
+
+resource &quot;google_project_service&quot; &quot;apis&quot; {
+  project = var.project_id
+  for_each = toset([
+    &quot;compute.googleapis.com&quot;,
+    &quot;storage.googleapis.com&quot;,
+    &quot;iap.googleapis.com&quot;,
+    &quot;iam.googleapis.com&quot;,
+    &quot;iamcredentials.googleapis.com&quot;,
+    &quot;sts.googleapis.com&quot;,
+    &quot;artifactregistry.googleapis.com&quot;,
+    &quot;logging.googleapis.com&quot;,
+    &quot;monitoring.googleapis.com&quot;,
+  ])
+  service            = each.key
+  disable_on_destroy = false
+}
+```
+
+Enable additional billing/Cloud Build APIs only if implementing those features. API enablement alone does not install software or configure monitoring.
+
+### New VM identity and monitoring authorization
+
+Define a dedicated runtime identity in each new environment root, for example:
+
+```hcl
+resource &quot;google_service_account&quot; &quot;web&quot; {
+  project      = var.project_id
+  account_id   = &quot;geometrydash-ui-web&quot;
+  display_name = &quot;geometrydash-ui web runtime&quot;
+  depends_on   = [google_project_service.apis]
+}
+
+resource &quot;google_project_iam_member&quot; &quot;web_observability&quot; {
+  for_each = toset([
+    &quot;roles/logging.logWriter&quot;,
+    &quot;roles/monitoring.metricWriter&quot;,
+  ])
+  project = var.project_id
+  role    = each.key
+  member  = &quot;serviceAccount:${google_service_account.web.email}&quot;
+}
+```
+
+Attach that account to the **new** web VM with an appropriate access scope:
+
+```hcl
+# Inside this environment&#x27;s new google_compute_instance resource.
+service_account {
+  email  = google_service_account.web.email
+  scopes = [&quot;https://www.googleapis.com/auth/cloud-platform&quot;]
+}
+```
+
+The scope does not grant all-project permissions by itself; IAM controls access. Install/configure the Ops Agent through this application&#x27;s version-controlled bootstrap and verify logs and metrics arrive in the corresponding new project. [Ops Agent authorization](https://docs.cloud.google.com/monitoring/agent/ops-agent/authorization), [agent installation](https://docs.cloud.google.com/monitoring/agent/ops-agent/installation)
+
+### Identity boundaries
+
+| Identity | Required access | Boundary |
+| --- | --- | --- |
+| Environment web runtime | Artifact Registry Reader on its own image repository; log writer; metric writer | No Terraform state access or image publication |
+| CI image publisher | Artifact Registry Writer on the new nonproduction repository | No SSH/root access or infrastructure administration |
+| Image promoter | Reader on the new nonproduction repository and Writer on the new production repository | Copies the tested image; no access to the unrelated project |
+| Staging deployer | IAP/OS Login access to the new staging VM plus its approved deploy command | New nonproduction project only |
+| Production deployer | IAP/OS Login access to the new production VM plus its approved deploy command | New production project only |
+| Environment Terraform operator | Permissions needed by its managed resources and state backend | Its new environment project only |
+| Project bootstrap operator | Approved project creation and billing attachment | Separate from routine application release credentials |
+
+Create an Artifact Registry repository in each environment project. Grant `roles/artifactregistry.reader` to that environment&#x27;s runtime at repository scope and configure Docker&#x27;s supported credential helper to use the attached VM identity. Production pulls from its production repository. [Compute Engine image pulls](https://docs.cloud.google.com/artifact-registry/docs/integrate-compute)
+
+Promotion copies the approved OCI manifest and layers into the production repository without rebuilding. Use a digest-preserving copy and verify the destination digest matches the tested source before deployment. Keep each environment&#x27;s current and previous images in its own repository so runtime/recovery does not require access to the other environment.
+
+For production deployment, use OS Login plus a tightly scoped, root-owned deployment helper through `sudo`. Access to Docker&#x27;s socket or `osAdminLogin` effectively grants host administration; if choosing that simpler trial model, limit it to dedicated web VMs and document it explicitly. Scope `serviceAccountUser` to the target VM&#x27;s runtime service account. Provision IAP access and firewall rules in the new project; the unrelated project&#x27;s access settings are not inherited. [IAP permissions](https://docs.cloud.google.com/iap/docs/using-tcp-forwarding)
+
+### Repository layout
+
+Use separate root modules and backends for nonproduction and production. Each environment owns its VPC, subnet, VM/MIG, image repository, runtime/deploy identities, federation configuration, monitoring, and state. A bootstrap root handles project creation and initial backend setup.
+
+Proposed layout:
+
+```text
+infra/
+  bootstrap/             # New projects, state buckets, initial identities
+  environments/
+    nonprod/             # New staging infrastructure and its backend
+    prod/                # New production infrastructure and its backend
+  modules/
+    web-vm/
+    web-mig/
+    observability/
+ops/
+  nginx/
+  systemd/
+  deploy.sh
+  rollback.sh
+  smoke.mjs
+  runbooks/
+.github/workflows/
+  checks.yml
+  release.yml
+  infrastructure.yml
+  drift.yml
+Dockerfile
+.dockerignore
+```
+
+These paths are implementation deliverables, not files already created by this guide.
+
+## 6. Build and supply-chain contract
+
+The runtime image serves the Vite `dist/` tree with an unprivileged Nginx process. Node.js, test tools, source files, cloud credentials, and private geometry do not belong in the runtime image.
+
+Build requirements:
+
+- `npm ci` from the committed lockfile.
+- `npm test` and `npm run build`; the latter already runs TypeScript checking.
+- Pin base images by digest and refresh them through reviewed dependency updates.
+- Include `version.json` with the Git commit and CI run identifier, and an OCI source/revision label.
+- Build once, test that image, then push and promote its immutable digest.
+- Scan application/build dependencies and the final image; publish an SBOM and provenance alongside the release record.
+- Set resource limits, run without root, drop unused capabilities, and use a read-only root filesystem with explicit temporary paths where Nginx needs them.
+- Keep the previous known-good image locally on the VM and protected from registry cleanup.
+
+Define the following serving behavior:
+
+| Request | Expected behavior |
+| --- | --- |
+| `/`, `/results`, `/import`, `/guide`, `/meshes/:id` | HTML with correct SPA routing |
+| `/assets/*` | Real JS/CSS/worker files; correct MIME; immutable caching for hashed names |
+| `/sample/*` | JSON/fixtures; revalidate unversioned files |
+| `/version.json` | Release identity; no stale caching |
+| `/readyz` | 200 only when the server can read the required release files |
+| Missing asset or JSON | 404, not a catch-all HTML response |
+
+Do not use `npm run dev` or `vite preview` as the public production server. Publish only the application build and its intentional public fixtures.
+
+**Existing-tab compatibility:** the app creates a new worker on each import. An old browser tab can request a previous hashed worker URL after a deployment. Retain prior hashed assets in the served release artifact for a defined window, such as the last 10 releases/7 days, and test an old tab with browser caching disabled. Automatically reloading the UI can discard the user&#x27;s in-memory imported workspace.
+
+## 7. CI/CD pipelines
+
+Use GitHub Actions for this GitHub repository and authenticate to the new environment projects with Workload Identity Federation. Create federation providers and deployment identities for this application. Match the trust condition to the numeric repository/owner IDs, protected branch, workflow, and environment. Only release/deploy jobs receive `id-token: write`; PR jobs receive no cloud credentials. [Workload Identity Federation](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines)
+
+GitHub runner billing is separate from GCP trial credit. If all CI execution must be billed in GCP, use Cloud Build for the same stages and a dedicated build identity; keep one authoritative release pipeline.
+
+### Application pipeline
+
+| Trigger/stage | Required work | Release gate |
+| --- | --- | --- |
+| Pull request | Install, dependency audit, unit tests, type check, build, container build, browser tests, image scan | No deployment; all required checks pass |
+| Trusted merge to main | Produce one tested image, SBOM/provenance, publish digest and release manifest | Associate results with that digest |
+| Staging | Start environment, deploy digest, run hosted checks and browser journeys | Candidate passes with the production server/config |
+| Production promotion | Verify successful staging, copy the image into the new production repository, and verify the same digest | Protected GitHub environment; optional human reviewer |
+| Production deployment | Prepare inactive slot, verify, switch traffic, verify publicly | Failed verification restores previous slot |
+| After deployment | Record release evidence; observe error rate; stop scheduled staging | Alert if rollout, rollback, or cleanup fails |
+
+At minimum, run the existing checks:
+
+```bash
+npm ci
+npm audit --audit-level=high
+npm test
+npm run build
+npx playwright install --with-deps chromium
+```
+
+The current Playwright config starts a development server. Add `playwright.ci.config.ts` for a production build or the candidate container:
+
+```ts
+import { defineConfig } from &#x27;@playwright/test&#x27;;
+import base from &#x27;./playwright.config&#x27;;
+
+const target = process.env.E2E_BASE_URL;
+
+export default defineConfig({
+  ...base,
+  forbidOnly: true,
+  retries: 1,
+  workers: 1,
+  reporter: [[&#x27;list&#x27;], [&#x27;html&#x27;, { open: &#x27;never&#x27; }]],
+  use: {
+    ...base.use,
+    baseURL: target || &#x27;http://127.0.0.1:5174&#x27;,
+    trace: &#x27;retain-on-failure&#x27;,
+  },
+  webServer: target ? undefined : {
+    command: &#x27;npm run preview -- --host 127.0.0.1 --port 5174 --strictPort&#x27;,
+    url: &#x27;http://127.0.0.1:5174&#x27;,
+    reuseExistingServer: false,
+  },
+});
+```
+
+For the image gate, start the candidate container on a runner port and set `E2E_BASE_URL` to that port. For private staging, create an IAP tunnel and use the forwarded port; public production gets a separate HTTPS/certificate check. This preserves the existing Chromium software-WebGL flags.
+
+Required browser coverage includes sample loading, deep-link refresh, worker imports, STL rendering, original JSON export, and responsive layouts. There is currently no lint script or coverage threshold: implement those with an agreed baseline before adding them as required checks. Do not mask a failing check with unconditional retries or `continue-on-error`.
+
+### Infrastructure pipeline
+
+- PRs: `terraform fmt -check -recursive`, initialized-provider `terraform validate`, lint/security policy checks, and a cost review.
+- Run credentialed plans only for trusted changes; provider/data-source code is executable. Keep untrusted fork checks credential-free.
+- Produce a saved plan from the reviewed commit for the correct state. Protect production apply with the infrastructure environment and apply that reviewed plan.
+- If the plan is stale or inputs changed, regenerate and review it. Never apply a different current branch than the one reviewed.
+- Run scheduled drift detection with `terraform plan -detailed-exitcode`: 0 means no change, 2 means changes, and 1 means an error. Report drift rather than applying automatically.
+- Separate infrastructure changes from routine image releases. In the MIG profile, define exactly one owner for the active instance-template pointer so Terraform and release automation do not revert each other&#x27;s changes.
+
+Pin workflow actions to reviewed commit SHAs, retain test reports, set job timeouts, and serialize releases per environment. Allow cancellation of superseded PR checks; do not interrupt a production switch with cancellation.
+
+## 8. Blue/green deployment and rollback on one VM
+
+Use two containers and a host Nginx TLS proxy. One slot serves traffic; the other receives the candidate image. Store the current/previous image digest, slot, proxy configuration checksum, commit, and deployment time in a root-owned release journal.
+
+The deployment helper must be idempotent and implement this transaction:
+
+1. Acquire a host deployment lock. Validate the requested digest and registry allowlist.
+2. Capture the active slot/configuration and write an in-progress journal record.
+3. Pull the candidate by digest; leave the active container running.
+4. Start the inactive slot on its localhost port with resource limits and restart policy.
+5. Poll `/readyz` with a deadline. Verify `version.json`, the sample manifest, real JS/worker responses, MIME types, and deep-link HTML.
+6. Generate the proxy configuration in a temporary file. Validate it with `nginx -t` before activating it.
+7. Atomically replace the active configuration and perform a graceful Nginx reload.
+8. Verify the public URL, TLS, release identity, and a browser smoke journey.
+9. If verification fails, restore the saved configuration, reload, and verify the old release. Mark the deployment failed even if rollback succeeds.
+10. If verification passes, mark the candidate active and retain the previous slot/image for rollback. Release the lock and record the event.
+
+Nginx reloads can gracefully replace workers, but that alone does not guarantee application continuity. Test requests during switching and allow old connections to drain before stopping a previous container. [Nginx reload behavior](https://nginx.org/en/docs/control.html)
+
+A Docker restart policy restarts a crashed process; an unhealthy container does not necessarily restart just because it has a health check. Use an explicit supervisor/watchdog policy and alert on repeated restarts.
+
+### Recovery cases
+
+| Failure | Recovery action | Target to prove |
+| --- | --- | --- |
+| Candidate fails before switch | Remove candidate; current release keeps serving | No traffic sent to the bad release |
+| Candidate fails after switch | Restore previous proxy config/image and verify | Rollback under 5 minutes |
+| CI runner disconnects during switch | Host helper/journal completes or recovers independently | No unknown active release |
+| Host reboots | Systemd starts proxy and correct recorded slots | Recover under 10 minutes in the lab |
+| Host is lost | Recreate from Terraform/bootstrap and retained digest | Measure restore time; initial target under 30 minutes |
+| Optional Spot staging is preempted | Recreate staging and redeploy the candidate digest | Production remains independent |
+
+Make rollback available as a protected, parameterized workflow accepting an **approved previous digest**, not an arbitrary image string. Never rebuild an old commit during an emergency rollback.
+
+Keep release evidence and registry images outside the serving VM in this application&#x27;s environment resources. Back up certificates/configuration securely or document certificate reprovisioning; avoid storing TLS private keys in Terraform state. Recreate web hosts from their own Terraform/bootstrap and retained releases.
+
+## 9. Monitoring that demonstrates operations
+
+Use **Cloud Monitoring + Cloud Logging + the Ops Agent**. They provide a small operational footprint and remain available when the VM is down. A separate Prometheus/Grafana VM is optional later if demonstrating those products is itself a requirement.
+
+Create dashboards and alert policies as Terraform resources. Include environment and instance filters so a stopped staging VM does not page as a production outage.
+
+| Signal | Initial collection / threshold | Action |
+| --- | --- | --- |
+| Public availability | HTTPS probe every minute from at least 3 locations; confirm status and expected content | Alert after repeated failures from at least 2 locations |
+| Release correctness | `version.json` matches the deployed digest&#x27;s commit; sample JSON loads | Fail deployment or investigate drift |
+| Server errors | 5xx ratio &gt;2% for 5 minutes, with a minimum request count | Check release/proxy logs; roll back if correlated |
+| Latency | p95 above a measured baseline for 10 minutes | Check contention, egress, and capacity |
+| CPU / memory | Sustained CPU &gt;80%; memory &gt;85% for 10 minutes | Inspect proxy/container resource use, leaks, or sizing |
+| Disk | &gt;80% used or projected exhaustion | Clean retained layers/logs according to policy |
+| Process / agent | Restart loop, missing metrics, stopped proxy | Recover and investigate |
+| Billing | Forecast beyond the remaining-credit plan | Stop optional resources and adjust the plan |
+| Certificate / trial expiry | Alerts before expiry | Renew or make the explicit post-trial decision |
+
+Emit structured proxy/application-deployment logs with status, duration, environment, release, and instance. Exclude uploaded geometry, filenames, credentials, and raw imported payloads. Configure log rotation on the VM and exclusions/retention in Cloud Logging.
+
+The current pricing page includes 50 GiB/project/month of ordinary Logging ingestion, 150 MiB/billing-account/month for eligible billable metric ingestion, non-chargeable Google Cloud metrics, and one million uptime-check executions/project/month. Three locations × two checks × one-minute intervals is roughly 259,200 executions in 30 days. Browser synthetic monitors have different pricing; do not treat them as ordinary uptime checks. Verify alerting pricing when implementing because its published start date has changed. [Observability pricing](https://cloud.google.com/products/observability/pricing)
+
+Suggested service objectives:
+
+- Track 99.9% monthly UI availability as a goal, not an achieved SLA.
+- Detect an outage within 5 minutes.
+- Restore a bad release within 5 minutes after initiating rollback.
+- Record deployment frequency, failed-deployment percentage, and measured recovery time.
+- Keep browser geometry errors separate from server availability.
+
+A healthy `/readyz` cannot prove WebGL or import behavior. Run browser journeys on each release and periodically while production is expected to be available.
+
+## 10. Scaling to real high availability
+
+For profile C, replace the standalone production VM with:
+
+- A **regional managed instance group** distributed across **two selected zones**.
+- At least two **standard** VMs, one per zone, each able to handle the expected normal load alone.
+- Immutable instance templates referencing a pinned OS image/bootstrap and container digest.
+- A global external Application Load Balancer with managed TLS.
+- Load-balancer health checks and a separately tuned, less aggressive autohealing policy.
+- Cloud Logging/Monitoring and the same release identity convention.
+- Explicit maximum instance count and cost limits in the capacity plan.
+
+A regional MIG can spread instances across zones; it does not protect from a whole-region outage. Losing one of two instances removes half the provisioned capacity, so test the survivor under the intended traffic. [Regional MIG design](https://docs.cloud.google.com/compute/docs/instance-groups/regional-migs)
+
+### Network and bootstrap
+
+Allow backend application ingress only from the documented load-balancer/health-check sources for the chosen load balancer, and administration through IAP. Target only the new production web instances using their dedicated identity or tags. [Health checks and firewall requirements](https://docs.cloud.google.com/load-balancing/docs/health-check-concepts)
+
+For the simplest trial profile, backend VMs can retain external IPs for outbound package/image access with inbound firewall rules restricted to the load balancer and IAP; the budget above includes these IPs. As the system matures, remove external IPs and use Private Google Access for supported Google APIs plus baked OS images or an explicitly budgeted egress path. Do not remove internet access while leaving startup scripts dependent on `apt` or public container registries.
+
+### Rolling releases
+
+Use a rolling update with `maxUnavailable = 0`. For a regional group spanning two zones, choose a supported surge configuration, such as a fixed `maxSurge = 2`; a fixed nonzero regional surge must accommodate the number of zones. Check production-project quota for the temporary extra instances, nonproduction quota for staging, and billing-account credit for all projects&#x27; usage. [Managed instance rolling updates](https://docs.cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups)
+
+Wait for candidate readiness and successful traffic checks before progressing. Autohealing is not application-version rollback: a broken template can recreate the same broken release. Roll back by selecting the previous immutable template through the same update process.
+
+Terraform should own infrastructure topology. Choose either Terraform-driven release-template updates or an explicitly delegated release field managed by CI; document that ownership and include it in drift checks.
+
+### HA acceptance exercise
+
+1. Start continuous probes and a bounded load test; record the normal baseline.
+2. Remove or stop one managed instance in the test deployment.
+3. Confirm the load balancer routes to the survivor and observe replacement/autohealing.
+4. Record failed requests, recovery time, and capacity on the survivor.
+5. Deploy an intentionally unhealthy candidate and verify rollout rejection/rollback.
+6. Confirm a valid release rolls out without a material availability drop.
+7. Tear down the temporary profile, verify no orphaned IP/LB/disk resources remain, and record the cost.
+
+Removing one VM demonstrates instance failure handling. A zonal-outage claim requires a zone-specific traffic/failure exercise and evidence; do not label a single process restart as a zone-failure test.
+
+Add multi-region serving, CDN, queues, and backend services when measured load or recovery requirements justify them. Kubernetes is a valid later learning objective, but the release, identity, observability, and recovery practices above transfer to it.
+
+## 11. Portfolio evidence and completion criteria
+
+| Capability | Evidence to retain |
+| --- | --- |
+| Infrastructure as code | Reviewed plan, repeatable staging creation, documented state ownership |
+| CI quality | Failed PR blocked; unit/browser reports; image scan and SBOM |
+| Environment promotion | Same image digest in staging and production |
+| Deployment safety | Failed candidate receives no live traffic; recorded successful switch |
+| Rollback | Before/after release IDs and measured recovery time |
+| Observability | Dashboard, delivered alert, correlated logs, recovery notification |
+| Security | IAM matrix, restricted federation, protected state storage, scoped network rules |
+| Project isolation | Plans reference only the new projects; no IAM/network/state dependencies on the unrelated project |
+| Cost engineering | Calculator assumptions, actual billing trend, staging schedule, cleanup evidence |
+| Availability | Failure-drill results and explicit single-VM / zone / region limitations |
+| Operations | Concise incident report and a runbook another person can follow |
+
+Suggested implementation order:
+
+- [ ] Choose new project IDs, region, VM sizing, and independent resource names.
+- [ ] Record remaining credit/expiry and total daily spend across projects on the billing account.
+- [ ] Bootstrap the new projects, private state buckets, and independent Terraform roots.
+- [ ] Verify plans and CI identities reference only this application&#x27;s new projects.
+- [ ] Add monitoring authorization/agent configuration and verify one alert end to end.
+- [ ] Create the image/registry, release manifest, and production-serving configuration.
+- [ ] Add CI checks against the actual container.
+- [ ] Implement staging, deployment locking/journal, blue/green switching, and rollback.
+- [ ] Create new staging and standard production hosts with separate networks, registries, and runtime identities.
+- [ ] Enable protected promotion, public HTTPS checks, and retention policies.
+- [ ] Measure a rollback and a host-rebuild drill.
+- [ ] Run the optional HA profile after confirming peak quota and budget.
+- [ ] Record results and decide what remains running after the exercise/trial.
+
+**Validation status:** the existing app&#x27;s 24 unit tests and production build passed during the initial documentation review. This guide specifies new, independent infrastructure; no resources from the unrelated project have been inspected, changed, or adopted. Project creation, billing, Docker deployment, monitoring collection, IAM, rollback, and HA behavior still require implementation and live validation.
+</code></pre></details>
+      </section>
+      <footer class="footer"><p><strong>geometrydash-ui · מחברת פריסה בעברית</strong></p><p>הקובץ כולל את התוכן, העיצוב וההדמיות שלו וניתן לפתוח אותו ישירות בדפדפן, גם ללא חיבור לרשת. קישורים למקורות חיצוניים דורשים אינטרנט. אפשר להדפיס או לשמור כ־PDF מהכפתור למעלה.</p><p id="source-fingerprint">מבוסס על <bdi>GCP_DEPLOYMENT.md</bdi> · מזהה עותק מקור: <code>2ff61c297ddb</code> · מחירי המחשבון הם הנחות התכנון שבמסמך.</p><noscript><p>JavaScript כבוי. כל פרקי ההסבר והדוגמאות זמינים לקריאה; המחשבון, ההדמיה והחיפוש דורשים JavaScript. להדפסה אפשר להשתמש בתפריט הדפדפן.</p></noscript></footer>
+    </main>
+  </div>
+  <script>
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const money = value => '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const form = $('budget-form');
+      function calculateBudget() {
+        if (!form.checkValidity()) {
+          $('budget-status').textContent = 'יש להזין מספרים תקינים: יתרה והוצאה לא שליליות, לפחות יום אחד ועתודה בין 0 ל־100 אחוז.';
+          $('budget-status').dataset.fit = 'no';
+          ['safe-daily', 'available-monthly', 'profile-cost'].forEach(id => $(id).textContent = '—');
+          return;
+        }
+        const credit = Number($('credit').value);
+        const days = Number($('days').value);
+        const other = Number($('other-spend').value);
+        const reserve = Number($('reserve').value) / 100;
+        const selected = form.querySelector('input[name="profile"]:checked').value;
+        const cost = selected === 'B' ? 36.70 : 75.20;
+        const daily = credit * (1 - reserve) / days;
+        const monthly = (daily - other) * 30;
+        const fit = cost <= monthly;
+        $('safe-daily').textContent = money(daily);
+        $('available-monthly').textContent = money(monthly);
+        $('profile-cost').textContent = money(cost);
+        $('budget-status').dataset.fit = fit ? 'yes' : 'no';
+        $('budget-status').textContent = fit
+          ? 'לפי ההנחות האלה פרופיל ' + selected + ' נכנס בתקציב. נותר מרווח של ' + money(monthly - cost) + ' ל־30 יום, מעבר לעתודה שבחרתם.'
+          : monthly < 0
+            ? 'ההוצאות האחרות לבדן חורגות מהתקציב ששומר על העתודה עד סוף התקופה. צריך לצמצם אותן לפני שמוסיפים את התשתית הזו.'
+            : 'לפי ההנחות האלה חסרים כ־' + money(cost - monthly) + ' ל־30 יום לפרופיל ' + selected + '. אפשר לקצר את משך התרגיל, לצמצם משאבים או לשנות את התקציב.';
+      }
+      form.addEventListener('input', calculateBudget);
+      form.addEventListener('change', calculateBudget);
+      form.addEventListener('submit', event => event.preventDefault());
+      calculateBudget();
+
+      let active = 'blue', tested = false, failed = false;
+      function renderRelease(message, error = false) {
+        const greenActive = active === 'green';
+        $('slot-blue').classList.toggle('active', !greenActive);
+        $('slot-green').classList.toggle('active', greenActive);
+        $('blue-status').textContent = greenActive ? 'הגרסה הקודמת שמורה לשחזור' : 'פעילה ומשרתת משתמשים';
+        $('green-status').textContent = greenActive ? 'פעילה ומשרתת משתמשים' : failed ? 'נכשלה; לא מקבלת תעבורה' : tested ? 'עברה בדיקות ומוכנה לפריסה' : 'מועמדת; עדיין לא נבדקה';
+        $('traffic-label').textContent = greenActive ? 'תעבורת המשתמשים → Green · גרסה 1.2' : 'תעבורת המשתמשים → Blue · גרסה 1.1';
+        $('validate-release').disabled = greenActive;
+        $('promote-release').disabled = !tested || failed || greenActive;
+        $('rollback-release').disabled = !greenActive;
+        $('sim-message').textContent = message;
+        $('sim-message').classList.toggle('error', error);
+        $('release-journal').textContent = 'active=' + (greenActive ? 'v1.2' : 'v1.1') + ' | previous=retained | candidate=' + (failed ? 'failed' : tested ? 'verified' : 'unchecked');
+      }
+      $('validate-release').addEventListener('click', () => {
+        tested = true; failed = false;
+        renderRelease('גרסה 1.2 עברה את בדיקות המוכנות, הקבצים והגרסה בהדמיה. גרסה 1.1 עדיין פעילה. עכשיו אפשר להעביר תעבורה למועמדת.');
+      });
+      $('promote-release').addEventListener('click', () => {
+        if (!tested || failed || active === 'green') return;
+        active = 'green';
+        renderRelease('הפרוקסי מפנה כעת לגרסה 1.2. גרסה 1.1 נשמרה. אפשר לדמות תקלה אחרי ההחלפה או ליזום חזרה לגרסה הקודמת.');
+      });
+      $('fail-release').addEventListener('click', () => {
+        const afterSwitch = active === 'green';
+        active = 'blue'; failed = true; tested = false;
+        renderRelease(afterSwitch
+          ? 'האימות אחרי ההחלפה נכשל. בהדמיה הופעל Rollback אוטומטי: התעבורה חזרה לגרסה 1.1 והפריסה של 1.2 מסומנת ככושלת. בענן נדרש סקריפט שמממש ומאמת זאת.'
+          : 'בדיקת המועמדת נכשלה לפני ההחלפה. גרסה 1.1 המשיכה לשרת, ולכן לא נדרשה החזרת תעבורה. מתקנים ובודקים את המועמדת מחדש.', true);
+      });
+      $('rollback-release').addEventListener('click', () => {
+        if (active !== 'green') return;
+        active = 'blue';
+        renderRelease('בוצעה חזרה יזומה לגרסה 1.1 באמצעות התמונה והתצורה השמורות. לא בוצעה בנייה חדשה. גרסה 1.2 נשארת זמינה לבדיקה.');
+      });
+      $('reset-release').addEventListener('click', () => {
+        active = 'blue'; tested = false; failed = false;
+        renderRelease('גרסה 1.1 משרתת את המשתמשים. קודם בודקים את המועמדת; עדיין אי אפשר להעביר אליה תעבורה.');
+      });
+
+      const terms = [...$('glossary-list').querySelectorAll('.term')];
+      function filterGlossary() {
+        const query = $('glossary-search').value.trim().toLocaleLowerCase();
+        let count = 0;
+        terms.forEach(term => { const found = term.textContent.toLocaleLowerCase().includes(query); term.hidden = !found; if (found) count++; });
+        $('glossary-count').textContent = count + ' מתוך ' + terms.length + ' מושגים';
+        $('glossary-empty').hidden = count > 0;
+      }
+      $('glossary-search').addEventListener('input', filterGlossary);
+      filterGlossary();
+
+      const checks = [...$('implementation-checklist').querySelectorAll('input')];
+      const storageKey = 'geometrydash-ui-hebrew-deployment-checklist-v1';
+      try { const saved = JSON.parse(localStorage.getItem(storageKey) || '{}'); checks.forEach(input => input.checked = saved?.[input.dataset.check] === true); } catch (_) { /* Reading remains available without storage. */ }
+      function updateChecklist(save) {
+        const count = checks.filter(input => input.checked).length;
+        $('check-progress').max = checks.length; $('check-progress').value = count;
+        $('check-count').textContent = count + ' מתוך ' + checks.length;
+        if (save) { try { localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(checks.map(input => [input.dataset.check, input.checked])))); } catch (_) { /* Persistence is optional. */ } }
+      }
+      checks.forEach(input => input.addEventListener('change', () => updateChecklist(true)));
+      $('reset-checklist').addEventListener('click', () => { checks.forEach(input => input.checked = false); updateChecklist(true); });
+      updateChecklist(false);
+
+      const sidebar = $('side-navigation');
+      function closeMenu() { sidebar.classList.remove('open'); $('menu-button').setAttribute('aria-expanded', 'false'); }
+      $('menu-button').addEventListener('click', () => { const open = sidebar.classList.toggle('open'); $('menu-button').setAttribute('aria-expanded', String(open)); });
+      sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+      document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeMenu(); } });
+      const sections = [...document.querySelectorAll('.chapter')];
+      const navLinks = [...sidebar.querySelectorAll('nav a')];
+      function updateReading() {
+        const total = document.documentElement.scrollHeight - innerHeight;
+        $('reading-progress').style.width = (total > 0 ? Math.min(100, Math.max(0, scrollY / total * 100)) : 0) + '%';
+        let current = sections[0].id;
+        sections.forEach(section => { if (section.getBoundingClientRect().top <= 160) current = section.id; });
+        navLinks.forEach(link => { if (link.hash === '#' + current) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current'); });
+      }
+      window.addEventListener('scroll', updateReading, { passive: true });
+      window.addEventListener('resize', updateReading);
+      updateReading();
+      let previouslyOpen = [];
+      window.addEventListener('beforeprint', () => { previouslyOpen = [...document.querySelectorAll('details[open]')]; document.querySelectorAll('details:not(#source-original)').forEach(detail => detail.open = true); });
+      window.addEventListener('afterprint', () => { document.querySelectorAll('details:not(#source-original)').forEach(detail => detail.open = previouslyOpen.includes(detail)); });
+      $('print-button').addEventListener('click', () => window.print());
+    })();
+  </script>
+</body>
+</html>

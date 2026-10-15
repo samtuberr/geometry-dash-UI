@@ -1,0 +1,30 @@
+logging:
+  receivers:
+    geometrydash_ui_nginx:
+      type: nginx_access
+      include_paths: [/var/log/nginx/access.log]
+    geometrydash_ui_nginx_error:
+      type: nginx_error
+      include_paths: [/var/log/nginx/error.log]
+    geometrydash_ui_releases:
+      type: files
+      include_paths: [/var/log/geometrydash-ui/releases.jsonl]
+  processors:
+    release_json:
+      type: parse_json
+  service:
+    pipelines:
+      geometrydash_ui_nginx:
+        receivers: [geometrydash_ui_nginx, geometrydash_ui_nginx_error]
+      geometrydash_ui_releases:
+        receivers: [geometrydash_ui_releases]
+        processors: [release_json]
+metrics:
+  receivers:
+    hostmetrics:
+      type: hostmetrics
+      collection_interval: 60s
+  service:
+    pipelines:
+      default_pipeline:
+        receivers: [hostmetrics]

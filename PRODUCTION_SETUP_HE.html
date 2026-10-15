@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="מדריך מעשי בעברית להקמת geometrydash-ui ב־Google Cloud עם Terraform ו־GitHub Actions, ניטור ושחזור גרסאות.">
+<title>הקמת Production — geometrydash-ui</title>
+<style>
+:root{--bg:#f3f2eb;--paper:#fffef8;--ink:#1d373e;--muted:#566b70;--line:#d5ddd4;--accent:#176954;--soft:#e8f0e4;--warn:#faf0d7;--navy:#16383f;--radius:16px}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:25px}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.85 Arial,"Noto Sans Hebrew",sans-serif}a{color:var(--accent);text-underline-offset:4px}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #c99237;outline-offset:4px}.skip{position:fixed;top:-100px;right:20px;z-index:20;background:white;padding:10px}.skip:focus{top:10px}.layout{max-width:1280px;margin:auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:45px;padding:35px 32px 70px}aside{min-width:0;position:sticky;top:25px;height:calc(100vh - 50px);overflow-y:auto;padding:10px 0}.brand{font-size:13px;letter-spacing:2px;font-weight:700;direction:ltr;text-align:right;color:var(--accent)}aside h2{font-size:21px;margin:12px 0 5px}aside p{font-size:13px;color:var(--muted)}nav a{display:block;text-decoration:none;font-size:14px;padding:7px 12px;margin:2px 0;border-radius:7px}nav a:hover{background:var(--soft)}nav b{display:inline-block;min-width:24px}.side-actions{display:flex;gap:8px;margin-top:20px}.button{background:var(--accent);color:white;border:0;border-radius:8px;padding:8px 14px;font-size:14px}.button.secondary{background:transparent;border:1px solid var(--line);color:var(--ink)}main{min-width:0}.hero{background:var(--navy);color:#f9fbf5;padding:42px;border-radius:22px;margin-bottom:30px}.eyebrow{font-size:12px;letter-spacing:1px;color:#b8d7bd}.hero h1{font-size:clamp(34px,5vw,54px);line-height:1.2;margin:18px 0}.hero p{color:#d9e8dd;margin-bottom:0;max-width:650px}.tags{display:flex;gap:9px;flex-wrap:wrap;margin-top:25px}.tag{font-size:12px;padding:4px 10px;border:1px solid #54756c;border-radius:20px}.section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:30px;margin-bottom:22px}.section h2{font-size:26px;line-height:1.4;margin:0 0 15px}.num{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--soft);color:var(--accent);font-size:16px;margin-left:10px;vertical-align:middle}.section h3{font-size:19px;margin:24px 0 8px}p{margin:0 0 15px}ul,ol{padding-right:25px}li{margin-bottom:8px}.callout{background:var(--soft);border-right:4px solid var(--accent);padding:17px 20px;border-radius:8px;margin:20px 0}.callout.warn{background:var(--warn);border-color:#b8862a}.callout p:last-child{margin-bottom:0}.caption,.muted{font-size:14px;color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.card{background:#f1f4ed;border:1px solid var(--line);border-radius:10px;padding:16px}.card strong{display:block;font-size:17px;margin-bottom:5px}.card p{font-size:14px;margin:0}.flow{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.flow span{background:var(--soft);padding:10px 14px;border-radius:9px;font-size:14px}.flow i{align-self:center;font-style:normal;color:var(--accent)}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}code{font-size:.86em;background:#edf0e9;padding:2px 5px;border-radius:4px;direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere}pre{direction:ltr;text-align:left;white-space:pre;overflow:auto;max-width:100%;margin:0;background:#15343c;color:#e9f1e9;padding:22px;font-size:13px;line-height:1.8;border-radius:0 0 10px 10px;tab-size:2}pre code{font-size:inherit;background:none;padding:0;color:inherit;unicode-bidi:normal;overflow-wrap:normal}.codebox{margin:16px 0 20px;min-width:0}.codehead{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#244852;color:#d4e4d9;border-radius:10px 10px 0 0;padding:7px 14px;font-size:12px}.copy{background:transparent;border:1px solid #63837d;color:#eef5ea;border-radius:5px;font-size:12px;padding:3px 10px;min-width:68px}.table-wrap{overflow-x:auto;margin:16px 0}table{border-collapse:collapse;width:100%;font-size:14px;min-width:430px}th,td{border-bottom:1px solid var(--line);padding:12px 10px;text-align:right;vertical-align:top}th{background:#eaf0e5;font-weight:bold}td:first-child code{white-space:nowrap}details{border:1px solid var(--line);border-radius:9px;margin:12px 0;padding:12px 16px}summary{cursor:pointer;font-weight:700}details[open] summary{margin-bottom:14px}.checklist label{display:flex;align-items:flex-start;gap:11px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}.checklist input{margin-top:8px;accent-color:var(--accent);width:18px;height:18px;flex-shrink:0}.checklist input:checked+span{color:#687e72;text-decoration:line-through}.progress{height:6px;background:#dfe8da;border-radius:5px;overflow:hidden;margin:15px 0}.progress div{height:100%;background:var(--accent);width:0}.check-status{font-size:14px;color:var(--muted)}footer{font-size:13px;color:var(--muted);padding:15px 5px}footer p{margin-bottom:8px}.source pre{max-height:550px;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:10px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr);padding:20px;gap:15px}aside{position:static;height:auto;overflow:visible}aside nav{display:flex;overflow:auto;gap:3px;margin-top:15px;padding-bottom:10px}nav a{white-space:nowrap;flex-shrink:0;font-size:13px}aside p{margin:0}.side-actions{margin:12px 0}.hero{padding:30px}.section{padding:24px}}@media(max-width:520px){body{font-size:16px}.layout{padding:12px}.hero{padding:25px}.hero h1{font-size:36px}.section{padding:20px}.section h2{font-size:23px}.grid{grid-template-columns:1fr}.num{width:30px;height:30px;font-size:14px}pre{font-size:12px;padding:16px}.flow{gap:6px}.flow span{padding:7px 9px;font-size:12px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{body{background:white;color:black;font-size:11pt}.layout{display:block;padding:0;max-width:none}aside,.copy,.side-actions,.no-print,.source{display:none!important}.hero{background:white;color:black;padding:10px 0;border:0}.hero p,.eyebrow{color:black}.hero h1{font-size:30pt}.tag{border-color:#aaa}.section{padding:15px 0;border:0;border-bottom:1px solid #bbb;border-radius:0;break-inside:auto}h2,h3,summary{break-after:avoid}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eee;color:black;font-size:9pt;overflow:visible;break-inside:avoid}.codehead{background:#ddd;color:black}.grid{display:block}.card{margin:10px 0}.table-wrap{overflow:visible}table{min-width:0}details>*{display:block}details>summary{display:list-item}.callout{break-inside:avoid}a{color:inherit}.checklist label{break-inside:avoid}footer{border-top:1px solid #aaa}.progress{display:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">דילוג לתוכן</a>
+<div class="layout">
+<aside aria-label="ניווט במדריך">
+<div class="brand">geometrydash-ui / OPERATIONS</div>
+<h2>מדריך ההקמה שלך</h2>
+<p>Production בלבד · תשתית חדשה ב־GCP</p>
+<nav aria-label="שלבי ההקמה">
+<a href="#before"><b>01</b> לפני שמתחילים</a>
+<a href="#account"><b>02</b> פרטי החשבון</a>
+<a href="#bootstrap"><b>03</b> בסיס התשתית</a>
+<a href="#vm"><b>04</b> מכונה ודומיין</a>
+<a href="#github"><b>05</b> חיבור GitHub</a>
+<a href="#release"><b>06</b> הפריסה הראשונה</a>
+<a href="#monitor"><b>07</b> ניטור ועלויות</a>
+<a href="#recovery"><b>08</b> שחזור גרסה</a>
+<a href="#maintenance"><b>09</b> תחזוקה ותשתית</a>
+<a href="#troubleshoot"><b>10</b> פתרון תקלות</a>
+<a href="#checklist"><b>✓</b> רשימת השלמה</a>
+</nav>
+<div class="side-actions"><button class="button" id="print">הדפסה / PDF</button></div>
+<p>כל הפקודות הן ל־Bash.<br>מריצים מתיקיית המאגר.<br>המדריך זמין גם ללא אינטרנט.</p>
+</aside>
+<main id="content">
+<header class="hero">
+<div class="eyebrow">מדריך מעשי בעברית · 15.10.2026</div>
+<h1>מהמאגר שלך<br>לאתר פעיל ב־GCP.</h1>
+<p>הסבר שלב אחר שלב לחיבור החשבון, יצירת המשאבים, הפעלת ה־Pipeline ופריסה לייצור עם HTTPS, ניטור ו־Rollback.</p>
+<div class="tags"><span class="tag">Terraform</span><span class="tag">GitHub Actions</span><span class="tag">Google Cloud</span><span class="tag">Production</span></div>
+</header>
+<div class="callout"><strong>מה כבר מוכן, ומה תעשה כאן?</strong><p>קובצי התשתית וה־Pipeline נכתבו במאגר ונבדקו מקומית. עכשיו ממלאים את פרטי החשבון ומריצים את ההקמה. הרצת <code>terraform apply</code> יוצרת או משנה משאבים בפועל. קרא את ה־Plan לפני כל Apply.</p></div>
+<section class="section" id="before">
+<h2><span class="num">01</span>לפני שמתחילים</h2>
+<p>מקימים <strong>פרויקט GCP חדש שמוקדש ל־geometrydash-ui Production</strong>. לפרויקט הקיים שלך, כולל <code>meshseg-worker</code>, יש משאבים ומצב Terraform משלו. משתמשים במזהי הפרויקט החדש בכל השלבים כאן.</p>
+<div class="grid"><div class="card"><strong>מה יפעל עכשיו</strong><p>מכונה רגילה אחת מסוג <code>e2-small</code>, Debian 12, דיסק 20 GiB, כתובת IP קבועה, רשת נפרדת, Registry, HTTPS וניטור.</p></div><div class="card"><strong>מה שמור להמשך</strong><p>Dev ו־Staging מופיעים בקוד כהערות או כקובצי דוגמה לא פעילים. גם ההרחבה לשתי מכונות באזורי זמינות שונים היא שלב עתידי.</p></div></div>
+<div class="callout warn"><strong>זמינות גבוהה: הגבול הנוכחי</strong><p>יש שתי גרסאות לפריסה על מכונה אחת, שמאפשרות החלפה ושחזור. נפילה של אותה מכונה או של אזור הזמינות עדיין יכולה להשבית את האתר. HA בין אזורים דורש בהמשך MIG ומאזן עומסים.</p></div>
+<h3>באיזה מחשב מריצים?</h3>
+<p>במחשב הניהול שלך, דרך מסוף <bdi>Bash</bdi>. ב־Windows אפשר לעבוד דרך WSL; אפשר גם ב־Cloud Shell. פתח את תיקיית המאגר שבה נמצאים <code>infra/</code> ו־<code>ops/</code>.</p>
+<ul><li><strong>להקמה:</strong> Terraform בגרסה <code>1.16.6</code>, ‏Google Cloud CLI ‏(<code>gcloud</code>), ‏GitHub CLI ‏(<code>gh</code>), ‏Python 3 ו־Git.</li><li><strong>לבדיקות מקומיות של האפליקציה:</strong> גם Node.js 24 ו־Docker. ב־GitHub הבדיקות רצות על Runner נפרד.</li><li><strong>ל־HTTPS:</strong> שם דומיין או תת־דומיין שביכולתך לערוך את ה־DNS שלו, למשל <code>geometrydash-ui.example.com</code>. החלף אותו בשם שלך.</li></ul>
+<p class="caption">קישורי התקנה רשמיים: <a href="https://developer.hashicorp.com/terraform/install">Terraform</a> · <a href="https://cloud.google.com/sdk/docs/install">Google Cloud CLI</a> · <a href="https://cli.github.com/">GitHub CLI</a> · <a href="https://www.python.org/downloads/">Python</a>. במדריך זה משתמשים בגרסת Terraform שנקבעה במאגר.</p>
+<pre><code>terraform version
+gcloud version
+gh --version
+python3 --version
+git --version</code></pre>
+<h3>מפת התהליך</h3>
+<div class="flow" aria-label="סדר ההקמה"><span>פרטי חשבון</span><i aria-hidden="true">←</i><span>Bootstrap</span><i aria-hidden="true">←</i><span>VM + DNS</span><i aria-hidden="true">←</i><span>GitHub</span><i aria-hidden="true">←</i><span>פריסה ובדיקה</span></div>
+</section>
+<section class="section" id="account">
+<h2><span class="num">02</span>ממלאים את פרטי החשבון</h2>
+<h3>א. יוצרים פרויקט ומחברים Billing</h3>
+<p>פתח את <a href="https://console.cloud.google.com/">Google Cloud Console</a>, צור פרויקט חדש וחבר אותו לחשבון ה־Billing או ה־Trial שלך. רשום את ה־<strong>Project ID</strong> ואת ה־<strong>Project Number</strong>. השם שמוצג במסך יכול להיות שונה מה־ID.</p>
+<p>חשבון Billing משותף פירושו שגם הפרויקט האחר משתמש באותו קרדיט Trial. צריך לחשב את היתרה לפי כלל החשבון.</p>
+<h3>ב. מתחברים מהמסוף</h3>
+<pre><code>gcloud auth login
+gcloud auth application-default login
+gh auth login</code></pre>
+<p class="caption">הפקודה הראשונה מחברת את gcloud; השנייה מכינה הרשאות מקומיות ש־Terraform יכול להשתמש בהן; השלישית מחברת את GitHub CLI.</p>
+<p>ב־Bootstrap דרושה לך הרשאה לאפשר APIs, להגדיר IAM, זהויות, Federation, אחסון ו־Registry בפרויקט החדש. בעל פרויקט עם הרשאת Owner יכול לבצע זאת. זהות ה־CI מקבלת בהמשך הרשאות ייעודיות. לתקציב האופציונלי נדרשות גם הרשאות תקציב בחשבון Billing.</p>
+<h3>ג. קוראים את המזהים</h3>
+<p>החלף את <code>YOUR_NEW_PROJECT_ID</code>, ‏<code>YOUR_OWNER</code> ו־<code>YOUR_REPOSITORY</code> בפרטים שלך:</p>
+<pre><code>gcloud projects describe YOUR_NEW_PROJECT_ID --format='value(projectNumber)'
+gh api repos/YOUR_OWNER/YOUR_REPOSITORY --jq '{repository_id: .id, owner_id: .owner.id}'</code></pre>
+<p><code>github_repository_id</code> ו־<code>github_owner_id</code> הם המספרים שהתקבלו מה־API. שם המשתמש או שם המאגר לבדם אינם אותם מזהים.</p>
+<h3>ד. מכינים קובץ הגדרות אחד</h3>
+<pre><code>cp infra/account.example.json infra/account.json
+# Edit infra/account.json with your account settings.</code></pre>
+<p>פתח את <code>infra/account.json</code> בעורך ושנה את הערכים. זו התבנית שבמאגר:</p>
+<pre><code>{
+  &quot;project_id&quot;: &quot;geometrydash-ui-prod-unique&quot;,
+  &quot;project_number&quot;: &quot;123456789012&quot;,
+  &quot;region&quot;: &quot;us-central1&quot;,
+  &quot;zone&quot;: &quot;us-central1-a&quot;,
+  &quot;github_owner&quot;: &quot;YOUR_OWNER&quot;,
+  &quot;github_repository&quot;: &quot;YOUR_REPOSITORY&quot;,
+  &quot;github_repository_id&quot;: &quot;123456789&quot;,
+  &quot;github_owner_id&quot;: &quot;12345678&quot;,
+  &quot;domain&quot;: &quot;geometrydash-ui.example.com&quot;,
+  &quot;notification_email&quot;: &quot;you@example.com&quot;,
+  &quot;admin_members&quot;: [&quot;user:you@example.com&quot;],
+  &quot;machine_type&quot;: &quot;e2-small&quot;,
+  &quot;disk_size_gb&quot;: 20,
+  &quot;billing_account_id&quot;: &quot;&quot;,
+  &quot;monthly_budget_usd&quot;: 35,
+  &quot;enable_gcp_deployments&quot;: false,
+  &quot;manage_branch_protection&quot;: true,
+  &quot;reviewer_user_ids&quot;: []
+}</code></pre>
+<div class="table-wrap"><table><thead><tr><th>שדה</th><th>מה ממלאים</th></tr></thead><tbody>
+<tr><td><code>project_id</code></td><td>ID של פרויקט הייצור החדש, מתוך GCP.</td></tr>
+<tr><td><code>project_number</code></td><td>מספר הפרויקט; נשאר כמחרוזת בתוך מירכאות ב־JSON.</td></tr>
+<tr><td><code>region</code> / <code>zone</code></td><td>אזור ומיקום מכונה בתוכו. למשל <code>us-central1</code> ו־<code>us-central1-a</code>. בחר לפי מיקום, מחיר ומכסה.</td></tr>
+<tr><td><code>github_owner</code> / <code>github_repository</code></td><td>שם הבעלים ושם המאגר, כל אחד בשדה נפרד ובאותיות המדויקות של GitHub.</td></tr>
+<tr><td><code>github_repository_id</code> / <code>github_owner_id</code></td><td>המזהים המספריים שקראת עם <code>gh api</code>.</td></tr>
+<tr><td><code>domain</code></td><td>שם הדומיין בלבד, למשל <code>geometrydash-ui.your-domain.com</code>; ללא <code>https://</code> או נתיב.</td></tr>
+<tr><td><code>notification_email</code></td><td>אימייל להתראות ולרישום תעודת HTTPS.</td></tr>
+<tr><td><code>admin_members</code></td><td>למשל <code>["user:you@gmail.com"]</code>. האנשים האלה יקבלו ניהול מכונה דרך IAP ו־OS Login.</td></tr>
+<tr><td><code>machine_type</code> / <code>disk_size_gb</code></td><td>ברירת המחדל היא <code>e2-small</code> ו־20 GiB. אפשר לשנות לפי המדידה והתקציב.</td></tr>
+<tr><td><code>billing_account_id</code></td><td>אפשר להשאיר מחרוזת ריקה. מילוי מזהה החשבון מאפשר יצירת תקציב התראות.</td></tr>
+<tr><td><code>monthly_budget_usd</code></td><td>סף ההתראה בדולרים. ברירת המחדל 35; זה אינו מחיר צפוי או מנגנון עצירת הוצאות.</td></tr>
+<tr><td><code>enable_gcp_deployments</code></td><td>השאר <code>false</code> עד שהמכונה, DNS ו־GitHub מוכנים.</td></tr>
+<tr><td><code>manage_branch_protection</code></td><td><code>true</code> להפעלת הגנת main, בהתאם לתמיכת תכנית GitHub שלך.</td></tr>
+<tr><td><code>reviewer_user_ids</code></td><td>אופציונלי: מספרי משתמשי GitHub שיאשרו עבודות Production. אפשר להשאיר רשימה ריקה בהקמה אישית.</td></tr>
+</tbody></table></div>
+<p>אחרי העריכה, הפק קובצי הגדרות מקומיים:</p>
+<pre><code>python3 ops/configure.py infra/account.json</code></pre>
+<p><strong>מה אמור לקרות:</strong> ייווצרו <code>terraform.tfvars.json</code> וקובץ <code>.backend.hcl</code> בכל אחת מתיקיות <code>bootstrap</code>, ‏<code>production</code> ו־<code>github</code>. בשלב הזה נכתבים קבצים בלבד.</p>
+<div class="callout"><p>הקבצים המקומיים מוחרגים מ־Git. שמור סיסמאות ו־Tokens מחוץ ל־JSON הזה. החיבור של GitHub ל־GCP משתמש בזהות זמנית דרך WIF, ולכן אין צורך להוריד מפתח Service Account.</p></div>
+</section>
+<section class="section" id="bootstrap">
+<h2><span class="num">03</span>יוצרים את בסיס התשתית</h2>
+<p><strong>Bootstrap</strong> הוא שלב ההקמה הראשון: APIs, חשבונות שירות, אמון בין GitHub ל־GCP, ‏Artifact Registry ושלושה Buckets נפרדים לשמירת מצב Terraform. אפשר גם ליצור כאן תקציב התראות.</p>
+<p>הרץ עם החשבון המנהל שלך:</p>
+<pre><code>terraform -chdir=infra/bootstrap init -input=false
+terraform -chdir=infra/bootstrap plan -out=bootstrap.tfplan</code></pre>
+<p>בדוק שה־Plan מכוון לפרויקט החדש ושהמשאבים מתאימים למתואר. כדי לבצע את התכנית ששמרת:</p>
+<pre><code>terraform -chdir=infra/bootstrap apply bootstrap.tfplan</code></pre>
+<h3>מעבירים מיד את ה־State לענן</h3>
+<p><strong>State</strong> הוא המיפוי שבעזרתו Terraform יודע אילו משאבים שייכים לקוד. בהרצה הראשונה הוא מקומי, כי ה־Bucket עדיין לא היה קיים. עכשיו מעבירים אותו ל־Bucket של ה־Bootstrap:</p>
+<pre><code>cp infra/bootstrap/backend.tf.example infra/bootstrap/backend.tf
+terraform -chdir=infra/bootstrap init -migrate-state -backend-config=bootstrap.backend.hcl
+terraform -chdir=infra/bootstrap state list
+terraform -chdir=infra/bootstrap output</code></pre>
+<p><strong>מה אמור לקרות:</strong> Terraform יבקש לאשר העתקת State. בדוק שהיעד הוא ה־Bucket החדש שלך, ואז אשר את ההעברה. <code>state list</code> אמור להציג את המשאבים שנוצרו, ו־<code>output</code> יציג את הזהויות, ה־Registry וה־Buckets.</p>
+<div class="callout warn"><p>שמור את גיבוי ה־State המקומי עד לאימות ההעברה. קובצי State ותכניות Terraform אינם מיועדים לפרסום במאגר. לכל אחד משלושת החלקים יש Bucket משלו; השתמש בקובץ Backend המתאים.</p></div>
+<details><summary>למה שלושה חלקי Terraform?</summary><div class="table-wrap"><table><thead><tr><th>תיקייה</th><th>תפקיד</th><th>מי מפעיל</th></tr></thead><tbody><tr><td><code>infra/bootstrap</code></td><td>זהויות, IAM, אמון, Registry ו־State</td><td>מנהל אנושי</td></tr><tr><td><code>infra/production</code></td><td>המכונה, הרשת והניטור</td><td>תחילה מנהל, ובהמשך Pipeline לתשתית</td></tr><tr><td><code>infra/github</code></td><td>סביבת Production, משתנים והגנת main ב־GitHub</td><td>מנהל עם הרשאות GitHub מתאימות</td></tr></tbody></table></div><p>ההפרדה שומרת את ניהול ההרשאות והאמון מחוץ לזהות שמפרסמת את האפליקציה.</p></details>
+</section>
+<section class="section" id="vm">
+<h2><span class="num">04</span>מכונה, רשת ודומיין</h2>
+<p>כעת יוצרים את תשתית Production עצמה:</p>
+<pre><code>terraform -chdir=infra/production init -input=false -backend-config=production.backend.hcl
+terraform -chdir=infra/production plan -out=production.tfplan</code></pre>
+<p>קרא את התכנית, ואז בצע:</p>
+<pre><code>terraform -chdir=infra/production apply production.tfplan
+terraform -chdir=infra/production output</code></pre>
+<h3>מחברים את ה־DNS לכתובת שהתקבלה</h3>
+<p>ב־Output יופיע <code>public_ipv4</code>. אצל ספק ה־DNS שלך צור רשומת <strong>A</strong> שמחברת את השם שהגדרת בשדה <code>domain</code> לכתובת הזו.</p>
+<div class="table-wrap"><table><thead><tr><th>סוג</th><th>שם לדוגמה</th><th>ערך</th></tr></thead><tbody><tr><td><code>A</code></td><td><code>geometrydash-ui</code> תחת הדומיין שלך</td><td>כתובת <code>public_ipv4</code> שקיבלת מ־Terraform</td></tr></tbody></table></div>
+<ul><li>רשום את השם המלא, למשל <code>geometrydash-ui.your-domain.com</code>, בשדה <code>domain</code>.</li><li>למכונה הזו לא הוגדר IPv6 ציבורי. הסר רשומת AAAA ישנה עבור אותו שם אם היא מפנה לשרת אחר.</li><li>בהנפקת התעודה הראשונה ודא שהשם מפנה ישירות למכונה. אם יש רשומת CAA, עליה לאפשר Let's Encrypt.</li><li>רכישת הדומיין ואירוח DNS נעשים אצל הספק שלך.</li></ul>
+<h3>מוודאים שסקריפט האתחול הסתיים</h3>
+<p>החלף בפקודות את <code>YOUR_NEW_PROJECT_ID</code> ואת <code>YOUR_ZONE</code>. לדוגמה, Zone יכול להיות <code>us-central1-a</code>.</p>
+<pre><code>gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command='sudo journalctl -u google-startup-scripts.service --no-pager -n 100'</code></pre>
+<p>ה־Startup Script מתקין Docker, ‏nginx, ‏Certbot, ‏Ops Agent ואת סקריפטי הפריסה. חפש סיום תקין וללא שגיאות התקנה. המכונה זקוקה ליציאה לאינטרנט כדי להתקין חבילות ולהוריד תמונות.</p>
+<div class="callout"><strong>מתי HTTPS יתחיל לעבוד?</strong><p>תעודת HTTPS מתקבלת בפריסה הראשונה, אחרי ש־DNS תקין. לפני כן HTTP מפנה ל־HTTPS וייתכנו התראות Uptime. פורט 80 נשאר פתוח לחידוש תעודות ולהפניה; גישת SSH עוברת דרך IAP.</p></div>
+<details><summary>האתחול נכשל — איך מריצים שוב?</summary><p>תקן את הגורם שמופיע בלוג, ואז הרץ:</p><pre><code>gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command='sudo google_metadata_script_runner startup'</code></pre><p>הסקריפט נועד להרצה חוזרת. לאחר שכבר יש אתר פעיל, הרצה כזו יכולה להפעיל מחדש את הקונטיינר ולגרום להפסקה קצרה; בצע בחלון תחזוקה.</p></details>
+</section>
+<section class="section" id="github">
+<h2><span class="num">05</span>מחברים את GitHub ל־Production</h2>
+<h3>א. מעלים את הקוד ונותנים לבדיקות לרוץ</h3>
+<p>בצע Commit ו־Push לקבצים שבדקת במאגר שלך. אם ה־Workflows עדיין אינם ב־GitHub, יש להעלות אותם תחילה. המתן ל־Workflow בשם <strong>Checks</strong> ולתוצאותיו לפני שהבדיקות הופכות לחובה בהגנת main.</p>
+<p>קוד התשתית מנהל את <strong>המאגר הקיים</strong>: סביבת <code>production</code>, מדיניות פריסה מ־main, משתנים והגנת ענף. שם הבעלים והמאגר צריכים להתאים למקום שבו העלית את הקוד.</p>
+<h3>ב. יוצרים את הגדרות GitHub</h3>
+<p>Token מקומי של GitHub צריך הרשאה לנהל Environments, משתני Actions והגנת ענף במאגר הזה. Token של <code>gh</code> יכול לשמש לכך אם יש לו את ההרשאות המתאימות.</p>
+<pre><code>export GITHUB_TOKEN="$(gh auth token)"
+terraform -chdir=infra/github init -input=false -backend-config=github.backend.hcl
+terraform -chdir=infra/github plan -out=github.tfplan
+terraform -chdir=infra/github apply github.tfplan
+unset GITHUB_TOKEN</code></pre>
+<p><strong>מה אמור להופיע:</strong> ב־GitHub, תחת <bdi>Settings → Environments</bdi>, תראה <code>production</code> ואת משתני GCP. מתג המאגר <code>ENABLE_GCP_DEPLOYMENTS</code> עדיין כבוי.</p>
+<details><summary>מה לגבי אישורים והגנת הענף?</summary><p>התמיכה תלויה בתכנית GitHub ובשאלה אם המאגר ציבורי או פרטי. אפשר למלא <code>reviewer_user_ids</code> כדי לדרוש מאשר לפריסות. כברירת מחדל אין מאשרים חובה, ומספר אישורי ה־PR הדרוש הוא אפס כדי לאפשר עבודה אישית. main עדיין דורש PR ובדיקות כשהגנת הענף מנוהלת.</p><p>אם תכנית GitHub שלך אינה תומכת בהגנת ענף, הגדר <code>manage_branch_protection=false</code> בקובץ החשבון, צור שוב קלטים ובחן את הגישה בהתאם. אם סביבה או הגנת ענף תואמת כבר מנוהלות, יש לייבא אותן ל־State של <code>infra/github</code> לפני Apply, כדי למנוע בעלות כפולה.</p></details>
+<h3>ג. מפעילים את מתג הפריסה</h3>
+<p>רק אחרי שהמכונה, DNS והגדרות GitHub מוכנים: ערוך את <code>infra/account.json</code> ושנה את השדה הבא ל־<code>true</code>:</p>
+<pre><code>"enable_gcp_deployments": true</code></pre>
+<p>השורה היא חלק מקובץ ה־JSON; שמור את מבנה הקובץ והפסיקים סביב השדות. לאחר מכן:</p>
+<pre><code>python3 ops/configure.py infra/account.json --force
+export GITHUB_TOKEN="$(gh auth token)"
+terraform -chdir=infra/github plan -out=github.tfplan
+terraform -chdir=infra/github apply github.tfplan
+unset GITHUB_TOKEN</code></pre>
+<p><code>--force</code> מעדכן את הקלטים המקומיים שנוצרו קודם. בשלב הזה מבצעים Apply לחלק <code>github</code>. ודא שלא שינית במקביל שדות תשתית אחרים בלי לתכנן אותם.</p>
+<div class="callout"><strong>איך החיבור מאובטח?</strong><p>WIF נותן ל־Workflow זהות זמנית לפי המאגר והבעלים המספריים, הענף <code>main</code>, הסביבה <code>production</code> ונתיב Workflow מותר. לכל תפקיד יש Service Account נפרד. פרסום ראשון של ההרשאות עשוי לקחת כמה דקות להתעדכן.</p></div>
+</section>
+<section class="section" id="release">
+<h2><span class="num">06</span>מריצים את הפריסה הראשונה</h2>
+<p>במאגר GitHub פתח:</p>
+<div class="callout"><p dir="ltr" style="text-align:left"><strong>Actions → Production release → Run workflow → main</strong></p></div>
+<p>הפעל את ה־Workflow. אם הגדרת מאשרים לסביבת Production, אשר את העבודות כשהן ממתינות לאישור.</p>
+<div class="flow"><span>בדיקות</span><i aria-hidden="true">←</i><span>בניית Image</span><i aria-hidden="true">←</i><span>סריקה ובדיקת קונטיינר</span><i aria-hidden="true">←</i><span>פרסום Digest</span><i aria-hidden="true">←</i><span>החלפת גרסה</span></div>
+<ol><li><strong>Checks:</strong> ביקורת תלויות, בדיקות יחידה, בדיקות Terraform, בדיקת Workflows וסקריפטים ובדיקות לוגיקת השחזור.</li><li><strong>Container:</strong> בונים פעם אחת, סורקים חולשות ובודקים בפועל HTTP, נתיבים, קבצי JSON, ‏Worker ושישה מסעות דפדפן.</li><li><strong>Publish:</strong> טוענים את אותה תמונה שנבדקה ומפרסמים אותה ב־Artifact Registry החדש. שומרים את ה־Digest שלה.</li><li><strong>Deploy:</strong> דרך IAP מריצים על המכונה את התמונה לפי ה־Digest, מאמתים אותה, מנפיקים HTTPS אם צריך ומעבירים אליה את התעבורה.</li><li><strong>Verification:</strong> בודקים את הגרסה בכתובת HTTPS מתוך המכונה וגם מתוך GitHub Runner. נשמר רישום של הגרסה הנוכחית והקודמת.</li></ol>
+<h3>איך יודעים שהצליח?</h3>
+<ul><li>העבודות ב־Workflow הסתיימו בהצלחה.</li><li>בכתובת הדומיין שלך נטענת האפליקציה דרך HTTPS תקין.</li><li>בנתיב <code>/version.json</code> מופיע <code>revision</code> שתואם ל־Commit שנפרס.</li><li>בדף ההרצה מופיע Artifact בשם <code>production-release-record</code>.</li></ul>
+<p><strong>שמור את רישום הפריסה.</strong> הוא מכיל תמונות נוכחית וקודמת, עם Digest ו־Revision. הארטיפקט מוגדר לשמירה של 90 יום; שמור עותק ברשומות התפעול שלך לפני פקיעתו.</p>
+<details><summary>מהן הגרסאות הכחולה והירוקה?</summary><p>אלו שני Slots בתוך אותה סביבת Production, בפורטים מקומיים <code>8081</code> ו־<code>8082</code>. אחד משרת את האתר, ובשני בודקים את הגרסה המועמדת. אחרי בדיקה nginx מעביר אליה תעבורה. הגרסה הקודמת נשמרת לשחזור.</p><p>קובצי Assets עם שמות מבוססי Hash נשמרים בין גרסאות, כדי שטאב שכבר פתוח יוכל לטעון את ה־Import Worker גם אחרי עדכון. רענון מלא של הדפדפן עדיין מוחק את קובצי הגאומטריה שהמשתמש ייבא לזיכרון.</p></details>
+</section>
+<section class="section" id="monitor">
+<h2><span class="num">07</span>מוודאים ניטור ותקציב</h2>
+<p>ב־GCP פתח <strong>Monitoring</strong>. נוצר Dashboard בשם <strong>geometrydash-ui production</strong> ומדיניות התראות. ב־Logging אמורים להופיע לוגים של nginx ושל הפריסות.</p>
+<div class="table-wrap"><table><thead><tr><th>בדיקה</th><th>מה לבדוק</th></tr></thead><tbody><tr><td>אתר ו־HTTPS</td><td>בדיקות Uptime מצליחות ממספר מיקומים, ותעודת TLS תקפה.</td></tr><tr><td>CPU / זיכרון / דיסק</td><td>נראים נתונים ב־Dashboard. Ops Agent צריך לדווח בפועל.</td></tr><tr><td>Ops Agent</td><td>יש מדיניות לחוסר מדדים; נדרש דיווח ראשוני כדי ליצור בסיס לזיהוי היעדרם.</td></tr><tr><td>אימייל</td><td>שלח הודעת בדיקה ואמת את הערוץ אם נדרש.</td></tr><tr><td>לוגים</td><td>לוגי HTTP ופריסות מגיעים; שמירת ברירת המחדל מוגדרת לשבעה ימים.</td></tr><tr><td>תעודה</td><td>קיימת התראה לקראת פקיעת התעודה, ו־Certbot Timer פעיל.</td></tr></tbody></table></div>
+<p>אחרי שהתקבלה התעודה הראשונה, בדוק את מנגנון החידוש דרך IAP:</p>
+<pre><code>gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command='sudo systemctl status certbot.timer --no-pager; sudo certbot renew --dry-run'</code></pre>
+<h3>כמה זה יעלה?</h3>
+<p>חשב את הפרופיל הפעיל שלך: מכונה אחת, דיסק 20 GiB, כתובת IPv4, אחסון Registry ו־State, שימוש בלוגים/מדדים/בדיקות Uptime ותעבורה. דומיין וצריכת GitHub Runners מחויבים בנפרד. מחיר תלוי באזור ובשימוש.</p>
+<p>הערך <code>monthly_budget_usd</code> הוא <strong>סף התראה שהגדרת</strong>. אם הוגדר Billing Account, תקציב הפרויקט מתריע ב־50%, ‏80% ו־100% ומודד שימוש לפני זיכויים. צריך לבדוק גם יתרת Trial והוצאות פרויקטים אחרים באותו Billing Account.</p>
+<div class="callout warn"><p>Budget שולח התראות ואינו עוצר הוצאות. השווה את היתרה ואת תאריך סיום הקרדיט לעלות הפרויקט בפועל. עצירת VM משאירה עלויות אפשריות של דיסק, IP ואחסון.</p></div>
+<p class="caption"><a href="https://cloud.google.com/products/calculator">מחשבון GCP</a> · <a href="https://cloud.google.com/stackdriver/pricing">תמחור ניטור ולוגים</a> · <a href="https://docs.cloud.google.com/billing/docs/how-to/budgets">הסבר רשמי על תקציבים</a></p>
+</section>
+<section class="section" id="recovery">
+<h2><span class="num">08</span>משחזרים גרסה או מכונה</h2>
+<h3>גרסה חדשה לא תקינה: Rollback</h3>
+<p>פתח <bdi>Actions → Production rollback → Run workflow → main</bdi>. השאר את שני שדות הקלט ריקים. המערכת תחזיר את ה־Digest של הגרסה הקודמת ותבדוק אותה.</p>
+<p>לפני הפריסה המוצלחת הראשונה אין גרסה קודמת שאפשר לשחזר. אם מועמד חדש נכשל תוך כדי פריסה, הסקריפט מנסה להחזיר אוטומטית את הגרסה האחרונה שהושלמה.</p>
+<h3>בודקים מה באמת פעיל</h3>
+<pre><code>gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command='sudo /usr/local/lib/geometrydash-ui/release.py status'</code></pre>
+<p>הפלט מציג <code>current</code> ו־<code>previous</code>. השווה ל־<code>/version.json</code> באתר. אם החיבור ל־GitHub נותק, ייתכן שהמכונה סיימה בהצלחה גם כשההרצה ב־GitHub אדומה. בדוק את המצב לפני הפעלה חוזרת.</p>
+<h3>מכונה הופעלה מחדש</h3>
+<p>ב־Reboot רגיל הדיסק נשמר. שירות <code>geometrydash-ui-recover.service</code> מעלה את הגרסה שהתחייבה למצב השמור. אם נמצאה פריסה שלא הושלמה, הוא חוזר לגרסה האחרונה שהושלמה. בדוק פעם אחת את ההתאוששות אחרי ההקמה.</p>
+<h3>המכונה או הדיסק אבדו</h3>
+<ol><li>צור מחדש את המשאב דרך חלק <code>infra/production</code> בתהליך תחזוקה מבוקר, עם אותה כתובת IP קבועה.</li><li>המתן לסיום Startup ול־DNS תקין.</li><li>מצא ברישום של פריסה מוצלחת את ה־Digest ואת ה־Revision שלה.</li><li>הפעל <strong>Production rollback</strong> ומלא <code>recovery_digest</code> בערך <code>sha256:…</code> המלא ואת <code>recovery_revision</code> ב־Commit SHA המלא שתואם לו.</li><li>בדוק HTTPS, גרסה, ניטור וטעינת האפליקציה.</li></ol>
+<p>תמונות ה־Registry נשמרות ללא ניקוי אוטומטי. בשחזור מכונה חדשה מתקבלת גם תעודת TLS חדשה. קובצי Assets ישנים שהיו בדיסק שאבד לא משוחזרים, ולכן משתמשים עם טאבים ישנים עשויים להזדקק לרענון ולייבוא מחדש.</p>
+<p class="caption">יעדי התחלה למדידה: זיהוי תקלה בתוך כחמש דקות, Rollback בתוך כחמש דקות ובניית VM מחדש בתוך כחצי שעה. אלה יעדי תפעול שיש לאמת בחשבון שלך.</p>
+</section>
+<section class="section" id="maintenance">
+<h2><span class="num">09</span>שינויי תשתית ותחזוקה</h2>
+<h3>משנים מכונה, רשת או ניטור</h3>
+<p>שינוי אפליקציה מופעל ב־<strong>Production release</strong>. שינוי משאבי GCP עובר ב־<strong>Production infrastructure</strong>.</p>
+<ul><li><code>apply=false</code>: יוצר Plan בלבד לעיון.</li><li><code>apply=true</code>: אחרי Plan מוצלח, עבודת Apply מבצעת בדיוק את התכנית שנשמרה באותה הרצה.</li><li>אם הוגדרו מאשרים, בדוק את ה־Artifact של התכנית לפני אישור Apply. ללא מאשרים, בחירת <code>true</code> מפעילה את הרצף אוטומטית.</li></ul>
+<p>ה־Pipeline הרגיל חוסם מחיקה או החלפת משאבים. לפעולה כזו נדרש תהליך תחזוקה מקומי ותכנית התאוששות. המכונה מוגנת ממחיקה כברירת מחדל.</p>
+<details><summary>עדכנתי Startup Script — מתי השינוי מופעל?</summary><p>Terraform כותב את העדכון ל־Metadata של המכונה. כדי להפעיל אותו, מריצים מחדש את <code>google_metadata_script_runner startup</code> דרך IAP או מבצעים Reboot בחלון תחזוקה. לאחר מכן בודקים את האתר. העדכון יכול להפעיל מחדש את הקונטיינר הפעיל לזמן קצר.</p></details>
+<h3>בדיקת Drift</h3>
+<p><strong>Production drift detection</strong> רץ פעם בשבוע וגם ידנית. הוא משווה את המציאות בענן לקוד עם זהות קריאה בלבד. קוד יציאה 0: אין שינוי; 2: נמצא הבדל; שגיאה אחרת: הבדיקה לא הושלמה. הירשם להתראות כישלון של GitHub Actions. אם הוגדרו מאשרים לסביבה, גם עבודה מתוזמנת עשויה להמתין לאישור.</p>
+<p>הרצות התשתית, הפריסה והשחזור חולקות קבוצת תזמון אחת. GitHub עשוי להחליף הרצה שממתינה בתור בהרצה חדשה יותר; ודא ש־Rollback שרצית אכן התחיל.</p>
+<h3>שמירת גרסאות ועדכונים</h3>
+<ul><li>שמור תמיד את תמונות הגרסה הנוכחית והקודמת ורישומי השחזור שלהן.</li><li>עקוב אחרי מקום הדיסק: תמונות וקובצי Assets נשמרים ומצטברים. מחק גרסאות ישנות שנבחרו במפורש במהלך תחזוקה, לפי משך התמיכה בטאבים פתוחים.</li><li>בדוק PRs של Dependabot לתלויות, Docker, Actions וספקי Terraform. שינויים בגרסאות Terraform ובקובצי הנעילה צריכים להישאר עקביים.</li><li>עדכוני אבטחה אוטומטיים של Debian מופעלים. תכנן Reboot כאשר הוא נדרש.</li></ul>
+<details><summary>בדיקות מקומיות — לפני שמעלים שינוי</summary><p>דרושים Node 24, Docker ו־Terraform 1.16.6. הרץ מתיקיית המאגר; שם הקונטיינר והפורט צריכים להיות פנויים.</p><pre><code>npm ci
+npm audit --audit-level=high
+npm test
+python3 -m unittest discover -s ops/tests -v
+bash ops/ci/terraform-check.sh
+docker build --build-arg VCS_REF=&quot;$(git rev-parse HEAD)&quot; -t geometrydash-ui-local .
+docker run --rm -d --name geometrydash-ui-local --read-only --tmpfs /tmp:rw,noexec,nosuid,size=32m \
+  --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 geometrydash-ui-local
+python3 ops/smoke.py http://127.0.0.1:8080 &quot;$(git rev-parse HEAD)&quot;
+python3 ops/ci/check-proxy.py geometrydash-ui-local
+npx playwright install --with-deps chromium
+npx playwright test --config=playwright.ci.config.ts
+docker stop geometrydash-ui-local</code></pre><p>בדיקות Terraform משתמשות בספקים מדומים, ולכן אינן דורשות חשבון ענן. הן אינן מאמתות DNS, מכסות או קבלת הרשאות בענן. תוצאות הבדיקות המקומיות בזמן הכנת התשתית: 24 בדיקות יחידה, שישה מסעות דפדפן, 15 בדיקות פריסה/הגדרות וארבע הרצות בדיקה של Terraform. לא בוצעה אז פריסה חיה לחשבון.</p></details>
+<details><summary>כשמחליטים להסיר את ההקמה</summary><p>כבה תחילה את <code>enable_gcp_deployments</code> דרך קובץ החשבון והחל את השינוי ב־GitHub. שמור State ורישומי התאוששות. שנה מקומית את <code>deletion_protection</code> ל־<code>false</code>, החל את השינוי ואז בדוק תכנית הסרה נפרדת של Production. ה־Pipeline הרגיל חוסם מחיקות.</p><p>ל־Buckets ול־Registry יש <code>prevent_destroy</code>; מסירים אותם במכוון רק אחרי גיבוי המידע הדרוש. ל־GitHub יש State נפרד, והסרתו מסירה את המשתנים וההגנות שמנוהלים בו. בדוק עלויות שנותרו של IP, דיסקים ואחסון.</p></details>
+</section>
+<section class="section" id="troubleshoot">
+<h2><span class="num">10</span>פתרון תקלות נפוצות</h2>
+<details><summary>לחצתי Run workflow ולא קרה כלום</summary><p>ודא שהענף הוא <code>main</code>, שהמשתנה ברמת המאגר <code>ENABLE_GCP_DEPLOYMENTS</code> שווה <code>true</code>, ושבוצע Apply ל־<code>infra/github</code> אחרי השינוי. בדוק אם העבודה ממתינה לאישור Production או להרצה קודמת.</p></details>
+<details><summary>שגיאת הרשאה ב־Terraform או ב־WIF</summary><p>קרא את השגיאה כדי לזהות את הפעולה והזהות. בהקמה מקומית ודא שהתחברת גם דרך <code>gcloud auth application-default login</code>. ב־GitHub ודא התאמה של Repository ID, ‏Owner ID, ‏Project Number, ‏main ושמות Workflows. אחרי יצירת WIF המתן לעדכון ההרשאות. בדוק גם שהחשבון המקומי רשאי לנהל את הפרויקט החדש.</p></details>
+<details><summary>Certbot נכשל או האתר מציג שגיאת HTTPS</summary><p>בדוק שרשומת A מפנה ל־<code>public_ipv4</code>, שאין AAAA שמפנה למקום אחר, ושפורט 80 נגיש לצורך אימות. ודא ש־CAA מאפשר Let's Encrypt. קרא את לוגי הפריסה ו־Startup. התעודה הראשונה מונפקת בזמן Release.</p></details>
+<details><summary>לא ניתן להתחבר ב־SSH</summary><p>השתמש ב־<code>--tunnel-through-iap</code>, בפרויקט וב־Zone הנכונים. ודא שאתה ברשימת <code>admin_members</code> או פועל דרך זהות ה־Deployer. גישת המכונה מסתמכת על IAP, ‏OS Login והרשאות לשימוש בזהות ה־Runtime.</p></details>
+<details><summary>configure.py אומר שקבצים כבר קיימים</summary><p>אם אתה מעדכן בכוונה את <code>infra/account.json</code>, בדוק את הערכים והרץ <code>python3 ops/configure.py infra/account.json --force</code>. האפשרות מחליפה את הקלטים המקומיים. אחר כך יש לתכנן ולהחיל את חלקי Terraform שהשינוי נוגע אליהם.</p></details>
+<details><summary>Terraform לא מצליח להתחבר ל־Bucket של State</summary><p>ודא שה־Bootstrap הסתיים, שה־Bucket קיים בפרויקט החדש, ושהשתמשת ב־Backend הנכון: <code>bootstrap.backend.hcl</code>, ‏<code>production.backend.hcl</code> או <code>github.backend.hcl</code>. בדוק הרשאות ו־Project ID. העברת ה־State הראשונה נעשית רק לאחר יצירת ה־Bucket.</p></details>
+<details><summary>הרצה אדומה אבל האתר עובד</summary><p>ייתכן שחיבור SSH נותק אחרי שהפריסה הצליחה. בדוק <code>release.py status</code> ואת <code>/version.json</code>. בחן גם <code>/var/log/geometrydash-ui/releases.jsonl</code> ולוגי השירותים דרך IAP לפני Retry או Rollback.</p></details>
+<details><summary>אין מדדי זיכרון או לוגים</summary><p>בדוק שסקריפט Startup הסתיים וש־<code>google-cloud-ops-agent</code> פועל. לזיכרון ולדיסק נדרש דיווח מה־Ops Agent, וגם הרשאות Runtime לדיווח לוגים ומדדים. התחל בלוגי <code>google-startup-scripts.service</code> ו־<code>google-cloud-ops-agent</code>.</p></details>
+</section>
+<section class="section" id="checklist">
+<h2>רשימת השלמה</h2>
+<p>סמן מה ביצעת. הסימונים נשמרים בדפדפן בלבד, אם האחסון המקומי זמין; הם אינם בודקים את הענן.</p>
+<div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+<p id="check-status" class="check-status" aria-live="polite">0 שלבים הושלמו</p>
+<div class="checklist">
+<label><input type="checkbox" data-check="project"><span>יצרתי פרויקט GCP חדש, חיברתי Billing ובדקתי יתרת Trial.</span></label>
+<label><input type="checkbox" data-check="tools"><span>הכלים מותקנים, ואני מחובר ל־GCP ול־GitHub מהמסוף.</span></label>
+<label><input type="checkbox" data-check="account"><span>מילאתי account.json והפקתי את קובצי ההגדרות.</span></label>
+<label><input type="checkbox" data-check="bootstrap"><span>Bootstrap הסתיים וה־State עבר ל־Bucket הייעודי.</span></label>
+<label><input type="checkbox" data-check="vm"><span>תשתית Production נוצרה ו־Startup הסתיים בהצלחה.</span></label>
+<label><input type="checkbox" data-check="dns"><span>רשומת A מפנה ל־IP החדש ו־DNS מוכן ל־HTTPS.</span></label>
+<label><input type="checkbox" data-check="checks"><span>קובצי ה־Workflows עלו ל־GitHub ובדיקות Checks עברו.</span></label>
+<label><input type="checkbox" data-check="github"><span>סביבת Production, משתנים והגנות GitHub הוגדרו.</span></label>
+<label><input type="checkbox" data-check="enable"><span>הפעלתי enable_gcp_deployments והחלתי את עדכון GitHub.</span></label>
+<label><input type="checkbox" data-check="release"><span>Production release הצליח; האתר ו־version.json תקינים.</span></label>
+<label><input type="checkbox" data-check="records"><span>שמרתי רישומי פריסה לשחזור עתידי.</span></label>
+<label><input type="checkbox" data-check="monitor"><span>ניטור, אימייל, לוגים וחידוש TLS נבדקו.</span></label>
+<label><input type="checkbox" data-check="recovery"><span>בדקתי Reboot ושחזור מבוקר, ותיעדתי זמני התאוששות.</span></label>
+</div>
+<button class="button secondary no-print" id="reset" style="margin-top:20px">איפוס הסימונים</button>
+<p class="caption" id="storage-status"></p>
+</section>
+<section class="section source" id="source">
+<h2>מסמכי המקור</h2>
+<p>הקמה באנגלית: <a href="PRODUCTION_SETUP.md">PRODUCTION_SETUP.md</a>. הסבר על הארכיטקטורה והרחבה עתידית: <a href="GCP_DEPLOYMENT_HE.html">מדריך הפריסה בעברית</a>.</p>
+<details><summary>עותק מלא של מדריך ההקמה באנגלית</summary><p>העותק מוטמע בקובץ לקריאה גם ללא אינטרנט.</p><pre dir="ltr"><code># geometrydash-ui: production setup and operations
+
+This is the setup guide for the **implemented production configuration**. Everything is prepared in this repository; account connection and live deployment happen when you run the steps below. The existing meshseg project is unrelated. Use a **new, billing-enabled GCP project** exclusively for geometrydash-ui production.
+
+Only production is active in the code. Dev and staging examples are commented out or use an inactive `.example` extension. [The earlier deployment design](GCP_DEPLOYMENT.md) and [Hebrew explanation](GCP_DEPLOYMENT_HE.html) describe the later multi-environment/HA expansion; they are not the current provisioning instructions.
+
+## What is included
+
+| Area | Implementation |
+| --- | --- |
+| App | Multi-stage Docker build; digest-pinned Node and non-root nginx bases; read-only container |
+| Production | One standard Debian 12 `e2-small` VM, 20 GiB balanced disk, static IPv4, dedicated VPC/subnet |
+| Access | Public 80/443; SSH only over IAP with OS Login; container ports bind to localhost |
+| HTTPS | Host nginx, Let&#x27;s Encrypt via Certbot, automatic renewal and expiry alerts |
+| Release | Test the built container, export it, publish that exact image, deploy by immutable registry digest |
+| Recovery | Blue/green slots, durable transaction, automatic fail-back, manual rollback and digest-based rebuild recovery |
+| State | Separate private, versioned GCS buckets for bootstrap, production and GitHub configuration |
+| Identity | Separate runtime, publisher, deployer, infrastructure and read-only drift service accounts; keyless GitHub federation |
+| Monitoring | HTTPS uptime from multiple regions, CPU/memory/disk and missing-agent alerts, certificate expiry, dashboard and Ops Agent logs |
+| Cost | One VM; no GKE, load balancer, Cloud NAT or inactive environment running; optional alerts-only billing budget |
+
+**Availability boundary:** two release slots on one VM protect releases, not host/zone availability. This setup has a single point of failure. A two-zone MIG and load balancer remain a later, separately costed change.
+
+## 1. Supply your account settings
+
+Install Terraform **1.16.6**, Google Cloud CLI, GitHub CLI and Python 3 on your administration machine. Node 24 and Docker are needed for local application/CI checks, not for Terraform setup. Commands below use Bash from the repository root; Cloud Shell or WSL are suitable.
+
+Create a new project in the GCP console, link your billing/trial account, and record its ID and numeric project number. Your existing project must not be selected. Sharing a billing account shares remaining trial credit; it does not connect application resources.
+
+Authenticate locally:
+
+```bash
+gcloud auth login
+gcloud auth application-default login
+gh auth login
+```
+
+The bootstrap operator needs permission to enable APIs, manage this new project&#x27;s IAM/service accounts/WIF/registry/state/logging, and provision its resources. A project Owner can perform the one-time bootstrap. CI does **not** receive Owner or project IAM administrator. Configuring the optional billing budget additionally requires budget permissions on the billing account.
+
+Read your IDs:
+
+```bash
+gcloud projects describe YOUR_NEW_PROJECT_ID --format=&#x27;value(projectNumber)&#x27;
+gh api repos/YOUR_OWNER/YOUR_REPOSITORY --jq &#x27;{repository_id: .id, owner_id: .owner.id}&#x27;
+```
+
+Copy and edit **one settings file**:
+
+```bash
+cp infra/account.example.json infra/account.json
+# Edit infra/account.json with your project, GitHub IDs, domain and email.
+python3 ops/configure.py infra/account.json
+```
+
+Use the exact GitHub owner/repository casing. Keep `enable_gcp_deployments` **false** until setup is complete. `billing_account_id` may stay empty; fill it to provision the project budget. `monthly_budget_usd` is an alert threshold, not a price estimate or spending cap. `admin_members` grants the listed humans VM root administration through OS Login.
+
+The generator writes ignored local Terraform inputs and backend configuration. It makes no API calls. Use `--force` only when intentionally regenerating those local files. All three roots and GitHub variables derive from the same settings, avoiding region/domain mismatches. No service-account key JSON is required.
+
+## 2. Bootstrap identities, registry and state
+
+Run these using your administrator identity, not a CI service account:
+
+```bash
+terraform -chdir=infra/bootstrap init -input=false
+terraform -chdir=infra/bootstrap plan -out=bootstrap.tfplan
+terraform -chdir=infra/bootstrap apply bootstrap.tfplan
+```
+
+Inspect every plan before applying. Bootstrap enables APIs and creates the registry, five service accounts, federation and IAM, state buckets, seven-day default log retention, and optionally the budget. It does not create another environment.
+
+The first apply uses local state because its state bucket does not exist yet. Immediately migrate that state to its own bucket:
+
+```bash
+cp infra/bootstrap/backend.tf.example infra/bootstrap/backend.tf
+terraform -chdir=infra/bootstrap init -migrate-state -backend-config=bootstrap.backend.hcl
+terraform -chdir=infra/bootstrap state list
+terraform -chdir=infra/bootstrap output
+```
+
+Answer Terraform&#x27;s state-migration prompt after checking the destination. Keep any local state backup secure until migration is confirmed; do not commit it. The production CI identity can access **only the production state bucket**, not bootstrap/GitHub state. Do not copy, import or reference the unrelated project&#x27;s Terraform state.
+
+Bootstrap is intentionally administered locally. Changing trust/IAM through the application deployment identity would defeat the separation.
+
+## 3. Provision production and connect DNS
+
+```bash
+terraform -chdir=infra/production init -input=false -backend-config=production.backend.hcl
+terraform -chdir=infra/production plan -out=production.tfplan
+terraform -chdir=infra/production apply production.tfplan
+terraform -chdir=infra/production output
+```
+
+Create an **A record** for `domain` pointing to `public_ipv4`. DNS hosting/domain purchase is intentionally outside this repository; use your DNS provider. Remove any stale AAAA record for this hostname because the VM has no configured public IPv6. Keep the DNS record direct to the VM during initial certificate issuance. If a CAA record exists, it must permit Let&#x27;s Encrypt.
+
+Wait for VM bootstrap to finish. Substitute the configured values in these commands:
+
+```bash
+gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command=&#x27;sudo journalctl -u google-startup-scripts.service --no-pager -n 100&#x27;
+```
+
+The first public HTTP response redirects to HTTPS; HTTPS becomes available on the first successful release, after Certbot validates DNS. Uptime checks can report failure before that release. Port 80 remains open for certificate renewals and redirects; SSH is not public.
+
+If bootstrap is incomplete, correct the cause and rerun it through IAP:
+
+```bash
+gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command=&#x27;sudo google_metadata_script_runner startup&#x27;
+```
+
+The startup script is idempotent and installs Docker, nginx, Certbot, Ops Agent and reviewed deployment scripts. It fetches distribution/Google agent packages during bootstrap, so a fresh VM requires outbound internet access through its own IPv4. Host package installation is not a byte-for-byte immutable machine image; application images are immutable. Consider a baked, patched VM image for the later MIG.
+
+## 4. Create the GitHub resources
+
+Commit/push the reviewed repository files to GitHub and let **Checks** run before making its checks mandatory. The GitHub Terraform root manages the **existing repository&#x27;s** production environment, main-only deployment policy, variables and branch protection; it does not create or import the repository itself.
+
+Provide a GitHub token locally with permission to administer that repository&#x27;s environments, Actions variables and branch protection. `gh auth token` can supply it if your CLI token has those permissions. Public/private repository plans differ in support for environment reviewers and protected branches. Required reviewers are optional (`reviewer_user_ids`); a solo maintainer can approve their own manual run.
+
+```bash
+export GITHUB_TOKEN=&quot;$(gh auth token)&quot;
+terraform -chdir=infra/github init -input=false -backend-config=github.backend.hcl
+terraform -chdir=infra/github plan -out=github.tfplan
+terraform -chdir=infra/github apply github.tfplan
+unset GITHUB_TOKEN
+```
+
+If matching environment/branch protection resources already exist, import them into this **new GitHub root** before applying instead of creating competing owners. If the repository&#x27;s plan does not support branch protection, set `manage_branch_protection=false`; review access accordingly. Branch protection requires the named checks and prohibits force pushes/deletion. The default PR review approval count is zero to support a solo owner; raise it when there is a second reviewer.
+
+After the VM, DNS and GitHub environment are ready, set `enable_gcp_deployments=true` in `infra/account.json`, regenerate with `--force`, and apply **only the GitHub root** again. This updates the repository&#x27;s `ENABLE_GCP_DEPLOYMENTS` switch. WIF may need several minutes to propagate after bootstrap.
+
+GitHub-to-GCP trust requires **all** of: immutable repository and owner IDs; `main`; the `production` environment; an allowed event; and one of the four exact workflow paths. Workflow-specific bindings decide which service account that workflow can use. PR checks receive no GCP identity. [Google&#x27;s federation guidance](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines)
+
+## 5. Run a production release
+
+Open **Actions → Production release → Run workflow → main**. The workflow is manual while there is only production.
+
+1. Run dependency audit and all 24 existing unit tests, Terraform validation/policy tests, workflow/shell linting and release transaction tests.
+2. Build the application image once. Scan it for fixable high/critical vulnerabilities and test its HTTP contract and all six existing Chromium journeys against the container.
+3. Export that tested image as a short-lived Actions artifact. The publisher job loads it and pushes it to your new production Artifact Registry repository without rebuilding.
+4. Deploy its `sha256` digest through IAP. The host checks the image label, health, assets, worker, JSON sample and deep links before switching nginx, then verifies the public HTTPS revision.
+5. Verify from the GitHub runner too and retain `production-release-record` containing current/previous images for 90 days.
+
+The registry tag includes commit/run/attempt and is immutable. The digest is the deployment identity. The container runs as UID 101 with dropped capabilities, a read-only filesystem, bounded memory/processes/logs and localhost-only ports. The workload itself needs no GCP secrets.
+
+Two slots use ports 8081/8082 **inside production**. They are not dev or staging environments. The prior container remains available until that slot is needed again; rollback can recreate it from its recorded digest. Browser assets are copied into an append-only hashed asset directory, preserving import workers for old tabs. HTML/version responses are not cached. A full browser reload still discards the user&#x27;s in-memory imported workspace.
+
+The host serializes all release operations using a lock and writes a transaction record before changes. If preparation, TLS, proxy switching or public validation fails, it restores the prior committed release. If the VM/process stops mid-transaction, the next boot or deployment restores the last committed release. A runner disconnect does not terminate the systemd-owned transaction; inspect host status before retrying.
+
+## 6. Operate and recover
+
+### Roll back a bad release
+
+Run **Production rollback** on `main` with both inputs empty. It deploys the previous successful digest, checks it and records the result. There is no previous release before the first successful deployment; an initial failed deployment cannot roll back to a nonexistent version.
+
+For human inspection:
+
+```bash
+gcloud compute ssh geometrydash-ui-production \
+  --project=YOUR_NEW_PROJECT_ID --zone=YOUR_ZONE --tunnel-through-iap \
+  --command=&#x27;sudo /usr/local/lib/geometrydash-ui/release.py status&#x27;
+```
+
+Inspect `/var/log/geometrydash-ui/releases.jsonl`, `journalctl -u &#x27;geometrydash-ui-release-*&#x27;`, nginx logs and Docker logs through IAP. A failed Actions run is not proof that the host rolled back: an SSH/network interruption can happen after a successful commit. Check the state record and `/version.json` before taking another action.
+
+### Reboot or rebuild
+
+Ordinary reboots retain the disk and release state. `geometrydash-ui-recover.service` restores the committed container/proxy configuration before nginx starts. Test this once after setup.
+
+For loss of the VM/disk, recreate it with the production Terraform root and the same static IP, wait for bootstrap, then use **Production rollback** with `recovery_digest` and `recovery_revision` from a previously successful release record. It pulls that approved image from the production registry, validates it and obtains a fresh TLS certificate. GitHub artifacts expire after 90 days: save the current and previous release records in your own durable operations records before expiry. Registry cleanup is deliberately disabled, so those images are retained until you explicitly remove them.
+
+Full rebuild does not recover the old VM&#x27;s retained browser assets; previously open tabs may need a reload/reimport. Initial recovery targets are detection within five minutes and application rollback within five minutes, with a VM rebuild target of thirty minutes. These are goals to measure in your account, not verified guarantees.
+
+### Infrastructure changes
+
+Run **Production infrastructure** on `main`. Leave `apply=false` for a plan only. With `apply=true`, its apply job uses the exact saved plan produced by that run, at the same commit. If reviewers are configured, inspect the plan artifact before approving the apply job. Without reviewers, choosing `apply=true` authorizes the sequential apply; use a plan-only run first if you want an additional review.
+
+Routine CI rejects resource deletions/replacements. Use a planned local maintenance procedure for such changes; review the saved plan, arrange recovery, and explicitly disable VM deletion protection when required. Terraform state locking and one GitHub concurrency group serialize infrastructure, releases, rollback and drift. GitHub retains at most one pending run per concurrency group; a newer queued run can replace an older pending run, so confirm an intended rollback actually starts.
+
+Changes to host scripts are embedded in VM metadata by Terraform. Updating metadata does not immediately execute the new scripts. After reviewing/applying those changes, rerun `google_metadata_script_runner startup` during a maintenance window or reboot, then verify the site. It can briefly restart the current container. Application-only releases do not need Terraform.
+
+**Production drift detection** runs weekly and on demand with a separate read-only identity. Exit code 2 is reported as drift; other nonzero codes are execution errors. It never applies or writes state. Subscribe to Actions failure notifications. Optional production reviewers also gate scheduled jobs; approve them or operate drift checks manually under that policy.
+
+### Monitoring and budget acceptance checks
+
+- Confirm alert email delivery with a test notification; complete channel verification if requested.
+- Confirm HTTPS checks succeed from multiple locations and `/version.json` reports the expected commit.
+- Confirm CPU, memory and disk metrics appear in the geometrydash-ui dashboard. A missing-series alert cannot establish a baseline before the agent has ever reported.
+- Confirm nginx and release logs arrive in Cloud Logging; the default bucket keeps seven days.
+- Check `systemctl status certbot.timer` and run `sudo certbot renew --dry-run` once after certificate issuance.
+- Trigger and recover a short, controlled availability failure; record actual detection/recovery time.
+- Verify your budget and remaining trial credit. The optional budget excludes credits so it measures underlying usage and sends standard billing notifications at 50/80/100%; it does not shut down resources. Keep an account-wide budget too if your unrelated project shares billing. [Budget behavior](https://docs.cloud.google.com/billing/docs/how-to/budgets)
+
+This implementation&#x27;s monthly cost is **not** the old guide&#x27;s production-plus-staging total. Price one VM, one 20 GiB disk, one IPv4, registry/state storage, log/metric/uptime usage and transfer for your region. Domain registration and GitHub runner usage are separate. Validate against remaining credit before applying. [GCP calculator](https://cloud.google.com/products/calculator), [Observability pricing](https://cloud.google.com/stackdriver/pricing)
+
+Monitor disk usage because retained assets and images accumulate. Do not run indiscriminate Docker/registry pruning: retain at least current and previous digests, plus assets needed by supported open browser sessions. Review and remove explicitly selected older releases during maintenance, after saving recovery records. A full long-lived asset archive can be moved to dedicated object storage/CDN in a later architecture.
+
+## 7. Local checks and security maintenance
+
+```bash
+npm ci
+npm audit --audit-level=high
+npm test
+python3 -m unittest discover -s ops/tests -v
+bash ops/ci/terraform-check.sh
+docker build --build-arg VCS_REF=&quot;$(git rev-parse HEAD)&quot; -t geometrydash-ui-local .
+docker run --rm -d --name geometrydash-ui-local --read-only --tmpfs /tmp:rw,noexec,nosuid,size=32m \
+  --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 geometrydash-ui-local
+python3 ops/smoke.py http://127.0.0.1:8080 &quot;$(git rev-parse HEAD)&quot;
+python3 ops/ci/check-proxy.py geometrydash-ui-local
+npx playwright install --with-deps chromium
+npx playwright test --config=playwright.ci.config.ts
+docker stop geometrydash-ui-local
+```
+
+Terraform tests use mocked providers and require no cloud credentials; they cannot prove live IAM, quota, DNS or API acceptance. Terraform security scanning, source secret scanning, image scanning, audit and lint gates run in GitHub Actions. Three resource-local scanner exceptions document deliberate choices: public web ingress, a VM public IP in this low-cost profile, and no mandatory signed commits for the solo-maintainer setup. SSH remains IAP-only and main requires checks/PRs; do not broaden those exceptions.
+
+Prepared and locally verified on 2026-10-15: 24 application unit tests, six browser journeys against the built container, 15 deployment/configuration tests, four mocked Terraform test runs, container HTTP checks, real nginx validation of initial HTTP/TLS configurations and restoration after an invalid configuration, workflow/shell linting, dependency audit and security scans. No live GCP apply, GitHub environment creation, federation login, public DNS/ACME issuance or cloud alert delivery has been performed; those are the account-specific acceptance steps above.
+
+Dependabot tracks npm, Docker bases, Actions and Terraform providers. Review coordinated version updates: provider locks and `.terraform-version`/workflow Terraform versions must stay consistent. High/critical fixable image vulnerabilities block release; unfixed findings still require review. Host Debian security updates are enabled through unattended upgrades; schedule any required reboots.
+
+### Teardown
+
+Disable `ENABLE_GCP_DEPLOYMENTS` through the GitHub configuration first. Save recovery records/state backups, then set `deletion_protection=false` locally and apply that change before a separately reviewed production destroy. The regular workflow rejects deletion. Review public IP, disk, registry and state storage charges after removal; stopping a VM is not a full teardown.
+
+Bootstrap state buckets and registry have Terraform `prevent_destroy` and must be explicitly retired only after exporting needed state/images. GitHub resources have their own root; destroying that root removes managed protection/variables, so plan that separately. Do not use the unrelated project&#x27;s credentials/state to clean up these resources.
+
+&lt;!-- FUTURE DEV/STAGING: no active provisioning or workflows. Revisit
+infra/environments.future.tf.example and the architecture guide when ready. --&gt;
+</code></pre></details>
+</section>
+<footer><p>המדריך מבוסס על קוד ההקמה ו־<bdi>PRODUCTION_SETUP.md</bdi> במאגר. מזהה מקור: <code>42ad6a2e6be9</code>.</p><p>פתיחת הקובץ והסימונים אינן יוצרות משאבים. את הפקודות מריצים במסוף לאחר מילוי הפרטים. אין תלות בגופנים, בספריות או בשירות חיצוני לצורך הצגת המדריך.</p><noscript><p>JavaScript כבוי: התוכן והפקודות זמינים; להדפסה השתמש בתפריט הדפדפן.</p></noscript></footer>
+</main>
+</div>
+<p class="sr-only" id="copy-status" role="status"></p>
+<script>
+(() => {
+  const key = 'geometrydash-ui-production-setup-he-v1';
+  const checks = [...document.querySelectorAll('[data-check]')];
+  let canStore = true;
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || '{}');
+    for (const input of checks) input.checked = saved[input.dataset.check] === true;
+  } catch { canStore = false; }
+  function update() {
+    const count = checks.filter(input => input.checked).length;
+    document.getElementById('check-status').textContent = `${count} מתוך ${checks.length} שלבים הושלמו`;
+    document.getElementById('progress-bar').style.width = `${count / checks.length * 100}%`;
+    try { localStorage.setItem(key, JSON.stringify(Object.fromEntries(checks.map(input => [input.dataset.check, input.checked])))); }
+    catch { canStore = false; }
+    document.getElementById('storage-status').textContent = canStore ? 'הסימונים נשמרים בדפדפן זה בלבד.' : 'שמירה מקומית אינה זמינה. הסימונים יישמרו רק כל עוד הדף פתוח.';
+  }
+  checks.forEach(input => input.addEventListener('change', update));
+  document.getElementById('reset').addEventListener('click', () => { checks.forEach(input => input.checked = false); update(); });
+  update();
+  document.querySelectorAll('pre').forEach(pre => {
+    if (pre.closest('.source')) return;
+    const box = document.createElement('div'); box.className = 'codebox';
+    const head = document.createElement('div'); head.className = 'codehead';
+    const label = document.createElement('span'); label.textContent = pre.textContent.trim().startsWith('{') ? 'JSON · עריכה בקובץ' : pre.textContent.trim().startsWith('"enable_gcp') ? 'שדה בתוך JSON' : 'Bash · מתיקיית המאגר';
+    const button = document.createElement('button'); button.className = 'copy'; button.type = 'button'; button.textContent = 'העתקה'; button.setAttribute('aria-label', 'העתקת קטע הקוד');
+    button.addEventListener('click', async () => {
+      const value = pre.textContent;
+      try {
+        if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value);
+        else {
+          const area = document.createElement('textarea'); area.value = value; area.dir = 'ltr'; area.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0'; document.body.append(area); area.select();
+          const success = document.execCommand('copy'); area.remove(); if (!success) throw new Error('copy unavailable');
+        }
+        button.textContent = 'הועתק'; document.getElementById('copy-status').textContent = 'קטע הקוד הועתק ללוח.';
+      } catch {
+        const selection = getSelection(); const range = document.createRange(); range.selectNodeContents(pre); selection.removeAllRanges(); selection.addRange(range);
+        button.textContent = 'סומן'; document.getElementById('copy-status').textContent = 'הטקסט סומן. השתמש בפקודת ההעתקה של הדפדפן.';
+      }
+      setTimeout(() => button.textContent = 'העתקה', 2000);
+    });
+    pre.before(box); head.append(label, button); box.append(head, pre);
+  });
+  const previousDetails = new Map();
+  addEventListener('beforeprint', () => { document.querySelectorAll('details:not(.source details)').forEach(item => { previousDetails.set(item, item.open); item.open = true; }); });
+  addEventListener('afterprint', () => { previousDetails.forEach((wasOpen, item) => item.open = wasOpen); previousDetails.clear(); });
+  document.getElementById('print').addEventListener('click', () => window.print());
+})();
+</script>
+</body>
+</html>

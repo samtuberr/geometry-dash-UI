@@ -6,3 +6,24 @@ dist/
 test-results/
 playwright-report/
 .evidence/
+
+# Local infrastructure inputs, state, plans and short-lived cloud credentials.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+*.backend.hcl
+!*.backend.hcl.example
+gha-creds-*.json
+.env
+.env.*
+!*.env.example
+__pycache__/
+*.pyc
+artifacts/
+infra/account.json
+infra/bootstrap/backend.tf

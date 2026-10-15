@@ -1,0 +1,19 @@
+# ENTIRE FILE IS INACTIVE. Terraform does not load *.tf.example.
+# Future environments require separate roots/backends/projects, not workspaces
+# over production credentials. Reuse the reviewed code after extracting a module.
+#
+# dev = {
+#   project_id = "geometrydash-ui-dev-UNIQUE"
+#   state_bucket = "geometrydash-ui-dev-UNIQUE-tf-dev"
+#   github_environment = "dev"
+# }
+# staging = {
+#   project_id = "geometrydash-ui-staging-UNIQUE"
+#   state_bucket = "geometrydash-ui-staging-UNIQUE-tf-staging"
+#   github_environment = "staging"
+#   scheduled = true
+# }
+#
+# Future pipeline: build once -> test staging digest -> digest-preserving copy
+# to production registry -> verify digest -> production deploy. Keep independent
+# retention and identities. Review the original GCP_DEPLOYMENT.md growth plan.

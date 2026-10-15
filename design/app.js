@@ -150,7 +150,7 @@ function navigate() {
   const current=['overview','inspector','results','import','guide'].includes(route)?route:'overview';
   document.querySelectorAll('.page').forEach(page=>page.hidden=page.id!==`page-${current}`);
   document.querySelectorAll('[data-nav]').forEach(link=>{link.classList.toggle('active',link.dataset.nav===current);if(link.dataset.nav===current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
-  document.title=`${({overview:'Overview',inspector:'3D Inspector',results:'Results',import:'Import',guide:'Geometry Guide'})[current]} · Geometry Atlas design`;
+  document.title=`${({overview:'Overview',inspector:'3D Inspector',results:'Results',import:'Import',guide:'Geometry Guide'})[current]} · geometrydash-ui design`;
   window.scrollTo(0,0);
 }
 document.addEventListener('click',event=>{

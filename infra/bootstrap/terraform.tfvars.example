@@ -1,0 +1,12 @@
+project_id           = "geometrydash-ui-prod-unique"
+region               = "us-central1"
+github_repository    = "YOUR_OWNER/YOUR_REPOSITORY"
+github_repository_id = "123456789"
+github_owner_id      = "12345678"
+admin_members        = ["user:you@example.com"]
+# Optional; needs billing.budgets.create on this billing account.
+# billing_account_id = "AAAAAA-BBBBBB-CCCCCC"
+# monthly_budget_usd = 35
+
+# FUTURE: dev_project_id = "your-separate-dev-project"
+# FUTURE: staging_project_id = "your-separate-staging-project"

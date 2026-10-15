@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+exec 9>/run/geometrydash-ui-bootstrap.lock
+flock 9
+export DEBIAN_FRONTEND=noninteractive
+if ! test -f /var/lib/geometrydash-ui/bootstrap-v1; then
+  apt-get update
+  apt-get install -y docker.io nginx certbot python3 curl ca-certificates unattended-upgrades
+  curl --fail --silent --show-error --location --retry 3 \
+    https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh -o /tmp/geometrydash-ui-install-ops-agent.sh
+  bash /tmp/geometrydash-ui-install-ops-agent.sh --also-install
+fi
+install -d -m 0755 /etc/geometrydash-ui /usr/local/lib/geometrydash-ui /var/lib/geometrydash-ui/public/assets /var/log/geometrydash-ui /var/www/acme
+# Terraform embeds reviewed repository files; no git credentials or source pull on the VM.
+# shellcheck disable=SC2016
+GEOMETRYDASH_UI_PAYLOAD='${payload}' python3 - <<'PY'
+import base64,json,os
+from pathlib import Path
+payload=json.loads(base64.b64decode(os.environ['GEOMETRYDASH_UI_PAYLOAD']))
+for name,content in payload.items():
+    path=Path(name)
+    path.parent.mkdir(parents=True,exist_ok=True)
+    tmp=path.with_suffix('.new')
+    tmp.write_bytes(base64.b64decode(content))
+    tmp.chmod(0o755 if name.endswith('.py') else 0o644)
+    os.replace(tmp,path)
+PY
+rm -f /etc/nginx/sites-enabled/default
+if ! test -f /etc/nginx/conf.d/geometrydash-ui-upstream.conf; then
+  printf 'upstream geometrydash_ui_backend { server 127.0.0.1:8099; }\n' > /etc/nginx/conf.d/geometrydash-ui-upstream.conf
+fi
+install -d /etc/letsencrypt/renewal-hooks/deploy
+printf '#!/bin/sh\nnginx -t && systemctl reload nginx\n' > /etc/letsencrypt/renewal-hooks/deploy/geometrydash-ui
+chmod 0755 /etc/letsencrypt/renewal-hooks/deploy/geometrydash-ui
+/usr/local/lib/geometrydash-ui/configure-web.py
+systemctl daemon-reload
+systemctl enable --now docker certbot.timer
+systemctl enable --now apt-daily.timer apt-daily-upgrade.timer
+systemctl enable geometrydash-ui-recover.service
+/usr/local/lib/geometrydash-ui/release.py recover
+nginx -t
+systemctl enable --now nginx
+systemctl restart google-cloud-ops-agent
+touch /var/lib/geometrydash-ui/bootstrap-v1

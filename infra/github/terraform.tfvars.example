@@ -1,0 +1,16 @@
+owner          = "YOUR_OWNER"
+repository     = "YOUR_REPOSITORY"
+project_number = "123456789012"
+production = {
+  project_id         = "geometrydash-ui-prod-unique"
+  region             = "us-central1"
+  zone               = "us-central1-a"
+  domain             = "geometrydash-ui.example.com"
+  notification_email = "you@example.com"
+  machine_type       = "e2-small"
+  disk_size_gb       = 20
+}
+enable_gcp_deployments = false
+manage_branch_protection = true
+# reviewer_user_ids = [12345678]
+# FUTURE: dev/staging configuration stays inactive until separate projects exist.

@@ -1,0 +1,9 @@
+/var/log/geometrydash-ui/*.jsonl {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}

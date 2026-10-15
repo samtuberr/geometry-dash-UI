@@ -1,0 +1,10 @@
+project_id         = "geometrydash-ui-prod-unique"
+region             = "us-central1"
+zone               = "us-central1-a"
+machine_type       = "e2-small"
+disk_size_gb       = 20
+domain             = "geometrydash-ui.example.com"
+notification_email = "you@example.com"
+# deletion_protection = false # Only for an explicitly planned teardown/rebuild.
+
+# FUTURE: staging has a separate project/root and never shares this state.

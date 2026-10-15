@@ -1,0 +1,97 @@
+name: Production infrastructure
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply the reviewed saved plan after planning (false = plan only)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: geometrydash-ui-production-mutations
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_GCP_DEPLOYMENTS == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      TF_VAR_region: ${{ vars.GCP_REGION }}
+      TF_VAR_zone: ${{ vars.GCP_ZONE }}
+      TF_VAR_domain: ${{ vars.PROD_DOMAIN }}
+      TF_VAR_notification_email: ${{ vars.NOTIFICATION_EMAIL }}
+      TF_VAR_machine_type: ${{ vars.MACHINE_TYPE }}
+      TF_VAR_disk_size_gb: ${{ vars.DISK_SIZE_GB }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.TERRAFORM_SA }}
+      - run: terraform -chdir=infra/production init -input=false -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
+      - run: terraform -chdir=infra/production plan -input=false -lock-timeout=5m -out=production.tfplan
+      - name: Reject deletion/replacement in the routine production pipeline
+        run: |
+          terraform -chdir=infra/production show -json production.tfplan > /tmp/geometrydash-ui-plan.json
+          python3 ops/ci/review-plan.py /tmp/geometrydash-ui-plan.json >> "$GITHUB_STEP_SUMMARY"
+          terraform -chdir=infra/production show -no-color production.tfplan > infra/production/plan.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: production-terraform-plan
+          path: |
+            infra/production/production.tfplan
+            infra/production/plan.txt
+          retention-days: 1
+          if-no-files-found: error
+  apply:
+    needs: plan
+    if: inputs.apply
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: production-terraform-plan
+          path: infra/production
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.TERRAFORM_SA }}
+      - run: terraform -chdir=infra/production init -input=false -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
+      - name: Apply exactly the saved plan from this workflow run
+        run: terraform -chdir=infra/production apply -input=false -lock-timeout=5m production.tfplan
+      - run: terraform -chdir=infra/production output -json >> "$GITHUB_STEP_SUMMARY"
+
+# FUTURE: separate dev/staging jobs, state and credentials remain commented out.
+# environment: staging
+# environment: dev

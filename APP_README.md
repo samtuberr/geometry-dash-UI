@@ -1,10 +1,10 @@
-# Geometry Atlas
+# geometrydash-ui
 
 A browser UI for [samtuberr/geometry-dash](https://github.com/samtuberr/geometry-dash): STL preview, segmented mesh inspection, and review of primitive classification and fitting results. The original assignment is preserved in `README.md`; the earlier design prototype remains in `design/`.
 
 ## Run
 
-Requires Node.js 20.19+ or 22.12+.
+Use Node.js 24, matching `.node-version` and the production build pipeline.
 
 ```bash
 npm ci
@@ -12,6 +12,14 @@ npm run dev
 ```
 
 Open the URL printed by Vite, normally `http://localhost:5173`. Vite chooses the next port when that port is occupied. Production: `npm run build`, then `npm run preview`. A static host needs an SPA fallback to `index.html` for `/meshes/...`, `/results`, `/import`, and `/guide`.
+
+For the implemented production Terraform, GitHub Actions, monitoring and rollback, start with [Production setup and operations](PRODUCTION_SETUP.md). Supply your account details in a local copy of `infra/account.example.json`; cloud workflows remain disabled until you configure and enable them. Only production is active; dev/staging examples are commented out.
+
+For step-by-step setup in Hebrew, open [מדריך ההקמה בעברית](PRODUCTION_SETUP_HE.html) in a browser. It includes the account fields, commands, expected results, troubleshooting, a local checklist and print/PDF support.
+
+The [GCP DevOps deployment plan](GCP_DEPLOYMENT.md) describes the longer-term environment separation and multi-zone availability design.
+
+For a complete Hebrew explanation, open [מדריך הפריסה בעברית](GCP_DEPLOYMENT_HE.html) in a browser. The standalone guide includes diagrams, a budget calculator, a release/rollback simulation, a glossary, and the embedded source document.
 
 ## Connect your pipeline
 
@@ -21,7 +29,7 @@ Generate results in the upstream repository:
 uv run python -m fitpipeline assignment/data assignment/predictions.json
 ```
 
-In Geometry Atlas, choose **Import geometry → Choose directory**, and select `assignment/`. This loads `manifest.json`, `data/mesh_XX/mesh.json`, `segments.json` (or `triangle_segments.csv`), and `predictions.json`. Selecting the whole upstream repository also works. Without a manifest, retain one folder per mesh; the folder name supplies the mesh ID. For a single mesh, a multiple-file selection also works. You can import `predictions.json` alone to attach output to the currently open, segmented dataset.
+In geometrydash-ui, choose **Import geometry → Choose directory**, and select `assignment/`. This loads `manifest.json`, `data/mesh_XX/mesh.json`, `segments.json` (or `triangle_segments.csv`), and `predictions.json`. Selecting the whole upstream repository also works. Without a manifest, retain one folder per mesh; the folder name supplies the mesh ID. For a single mesh, a multiple-file selection also works. You can import `predictions.json` alone to attach output to the currently open, segmented dataset.
 
 For standalone shape viewing, choose any binary or ASCII `.stl`. Orbit with left drag, zoom with the wheel or visible buttons, and pan with right drag or two fingers. Presets, fit selection, reset, fullscreen, and PNG export are in the viewport. Click a triangle to pin its inspection; Escape clears it. The triangle ID input makes original faces accessible without picking.
 

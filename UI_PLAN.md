@@ -1,4 +1,4 @@
-# Geometry Atlas — UI page plan
+# geometrydash-ui — UI page plan
 
 This repository is a separate viewer for the output of the geometry project described in `README.md`. The product imports existing meshes, segment assignments and predictions, then helps a person understand and inspect them. Classification, segmentation and primitive fitting stay in the upstream project.
 

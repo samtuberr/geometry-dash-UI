@@ -1,0 +1,61 @@
+name: Production drift detection
+on:
+  schedule:
+    - cron: '23 6 * * 1' # Weekly to conserve runner time; change to daily when needed.
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: geometrydash-ui-production-mutations
+  cancel-in-progress: false
+jobs:
+  drift:
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_GCP_DEPLOYMENTS == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      TF_VAR_region: ${{ vars.GCP_REGION }}
+      TF_VAR_zone: ${{ vars.GCP_ZONE }}
+      TF_VAR_domain: ${{ vars.PROD_DOMAIN }}
+      TF_VAR_notification_email: ${{ vars.NOTIFICATION_EMAIL }}
+      TF_VAR_machine_type: ${{ vars.MACHINE_TYPE }}
+      TF_VAR_disk_size_gb: ${{ vars.DISK_SIZE_GB }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DRIFT_SA }}
+      - run: terraform -chdir=infra/production init -input=false -lockfile=readonly -backend-config="bucket=$TF_STATE_BUCKET"
+      - name: Report drift without applying or writing state
+        run: |
+          set +e
+          terraform -chdir=infra/production plan -input=false -lock=false -detailed-exitcode -no-color > drift.txt 2>&1
+          result=$?
+          set -e
+          cat drift.txt
+          case "$result" in
+            0) echo 'Production matches the checked-in configuration.' >> "$GITHUB_STEP_SUMMARY" ;;
+            2) echo '::error::Production drift detected. Review the plan; no changes were applied.'; exit 1 ;;
+            *) echo '::error::Drift check failed to execute; this is not a clean result.'; exit "$result" ;;
+          esac
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: production-drift-plan
+          path: drift.txt
+          retention-days: 7
