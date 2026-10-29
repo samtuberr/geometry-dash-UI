@@ -3,7 +3,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "= 8.7.0"
+      version = "8.8.1"
     }
   }
   # First apply is local. After creation, add backend.tf from the documented
